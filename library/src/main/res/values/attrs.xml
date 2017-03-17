@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EasyCoordinate">
+        <attr name="ecOriginalXScale" format="float"/>
+        <attr name="ecOriginalYScale" format="float"/>
+        <attr name="ecAxisColor" format="color"/>
+        <attr name="ecAxisWidth" format="dimension"/>
+    </declare-styleable>
+</resources>
