@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
         pointList.add(new EasyPoint(-120, 80));
         pointList.add(new EasyPoint(250, 400));
         easyCoordinate.setDataList(pointList, new EasyGraphLine(), true);
+        easyCoordinate.refresh();
 
     }
 }

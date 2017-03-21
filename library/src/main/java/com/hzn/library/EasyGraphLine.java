@@ -32,7 +32,8 @@ public class EasyGraphLine extends EasyGraph {
     }
 
     @Override
-    protected void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint cPOriginal, float factorX, float factorY, Canvas canvas) {
+    protected void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
+                             EasyPoint pMin, EasyPoint pMax, Canvas canvas) {
         if (null == rawPointList || rawPointList.size() == 0)
             return;
 

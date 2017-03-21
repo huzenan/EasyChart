@@ -11,6 +11,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 坐标系
@@ -35,11 +37,11 @@ public class EasyCoordinate extends View {
     private float cHeight;
     // 左上角点的坐标，用于固定绘制边界
     private EasyPoint pMin;
-    // 左上角点的坐标
+    // 左下角点的坐标
     private EasyPoint cPMin;
     // 右下角点的坐标，用于固定绘制边界
     private EasyPoint pMax;
-    // 右下角点的坐标
+    // 右上角点的坐标
     private EasyPoint cPMax;
     // 原点坐标
     private EasyPoint pOriginal;
@@ -151,41 +153,105 @@ public class EasyCoordinate extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        // x轴
         canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
+        // y轴
         canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
+        // 网格
+
+        // 图形
         drawGraph(canvas);
     }
 
     // 绘制图形内容
     private void drawGraph(Canvas canvas) {
-        this.graph.drawGraph(rawPointList, pOriginal, factorX, factorY, canvas);
+        this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
     }
 
-    private EasyPoint lastPoint = new EasyPoint();
+    private Map<Integer, EasyPoint> pointList = new HashMap<>();
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                lastPoint.set(event.getX(), event.getY());
-                break;
-            case MotionEvent.ACTION_MOVE:
-                float x = event.getX();
-                float y = event.getY();
-                float deltaX = (x - lastPoint.x) * factorX;
-                float deltaY = (y - lastPoint.y) * factorY;
-                resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
-                        cPMin.x - deltaX, cPMin.y + deltaY,
-                        cPMax.x - deltaX, cPMax.y + deltaY);
-                lastPoint.set(x, y);
-                refresh();
-                break;
-            case MotionEvent.ACTION_UP:
-                break;
-            default:
-                break;
+        int actionIndex = event.getActionIndex();
+        int pointerId = event.getPointerId(actionIndex);
+        int pointerIndex = event.findPointerIndex(pointerId);
+
+        if (pointerIndex != -1) {
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    pointList.put(pointerId, new EasyPoint(
+                            event.getX(pointerIndex), event.getY(pointerIndex)));
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    if (event.getPointerCount() == 1) { // 单指操作
+                        EasyPoint point = pointList.get(pointerIndex);
+                        float x = event.getX(pointerIndex);
+                        float y = event.getY(pointerIndex);
+                        float deltaX = (x - point.x) * factorX;
+                        float deltaY = (y - point.y) * factorY;
+                        moveBy(deltaX, deltaY);
+                        point.set(x, y);
+                    } else { // 多指操作
+                        float minDeltaX = 0.0f;
+                        float maxDeltaX = 0.0f;
+                        float minDeltaY = 0.0f;
+                        float maxDeltaY = 0.0f;
+                        for (int i = 0; i < event.getPointerCount(); i++) {
+                            int movePointerId = event.getPointerId(i);
+                            int movePointerIndex = event.findPointerIndex(movePointerId);
+                            EasyPoint point = pointList.get(movePointerId);
+                            float x = event.getX(movePointerIndex);
+                            float y = event.getY(movePointerIndex);
+                            float deltaX = (x - point.x) * factorX;
+                            float deltaY = (y - point.y) * factorY;
+
+                            if (deltaX < 0 && deltaX < minDeltaX)
+                                minDeltaX = deltaX;
+                            else if (deltaX > 0 && deltaX > maxDeltaX)
+                                maxDeltaX = deltaX;
+                            if (deltaY < 0 && deltaY < minDeltaY)
+                                minDeltaY = deltaY;
+                            else if (deltaY > 0 && deltaY > maxDeltaY)
+                                maxDeltaY = deltaY;
+
+                            resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
+                                    cPMin.x - minDeltaX, cPMin.y + minDeltaY,
+                                    cPMax.x - maxDeltaX, cPMax.y + maxDeltaY);
+
+                            point.set(x, y);
+                        }
+                    }
+                    refresh();
+                    break;
+
+                case MotionEvent.ACTION_CANCEL:
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_POINTER_UP:
+                    break;
+
+                default:
+                    break;
+            }
         }
         return true;
+    }
+
+    /**
+     * 移动整个坐标系
+     *
+     * @param deltaX x方向的偏移量
+     * @param deltaY y方向的偏移量
+     */
+    public void moveBy(float deltaX, float deltaY) {
+        resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
+                cPMin.x - deltaX, cPMin.y + deltaY,
+                cPMax.x - deltaX, cPMax.y + deltaY);
+    }
+
+    public void scaleBy() {
+
     }
 
     /**

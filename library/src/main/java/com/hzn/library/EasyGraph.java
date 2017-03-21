@@ -1,8 +1,6 @@
 package com.hzn.library;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,13 +17,11 @@ public abstract class EasyGraph {
      * 绘制图形
      *
      * @param rawPointList 屏幕坐标点数据集
-     * @param cPOriginal   原点（屏幕坐标）
-     * @param factorX      x轴方向上的缩放比例
-     * @param factorY      y轴方向上的缩放比例
+     * @param pOriginal    原点（屏幕坐标）
      * @param canvas       Canvas
      */
-    protected abstract void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint cPOriginal,
-                                      float factorX, float factorY, Canvas canvas);
+    protected abstract void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
+                                      EasyPoint pMin, EasyPoint pMax, Canvas canvas);
 
     /**
      * 根据x值对坐标点数据集进行升序排序
