@@ -10,7 +10,7 @@ import android.util.TypedValue;
 import android.view.View;
 
 import com.hzn.library.line.EasyGraphLine;
-import com.hzn.library.line.EasyLinePoint;
+import com.hzn.library.line.EasyPointLine;
 
 import java.util.ArrayList;
 
@@ -87,10 +87,10 @@ public class EasyCoordinate extends View {
 
         // TODO 测试
         ArrayList<EasyPoint> pointList = new ArrayList<>();
-        pointList.add(new EasyLinePoint(100.25f, 120.4f, Color.BLUE, 5, 10, Color.RED, 6, EasyLinePoint.POINT_TYPE_FILL));
-        pointList.add(new EasyLinePoint(178.78f, 250.0f));
-        pointList.add(new EasyLinePoint(55.55f, 300.2f));
-        pointList.add(new EasyLinePoint(111.5f, 320.5f));
+        pointList.add(new EasyPointLine(100.25f, 120.4f, Color.BLUE, 5, 10, Color.RED, 6, EasyPointLine.POINT_TYPE_FILL));
+        pointList.add(new EasyPointLine(178.78f, 250.0f));
+        pointList.add(new EasyPointLine(55.55f, 300.2f));
+        pointList.add(new EasyPointLine(111.5f, 320.5f));
         setDataList(pointList, new EasyGraphLine(), true);
 
     }

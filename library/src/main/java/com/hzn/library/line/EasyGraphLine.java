@@ -59,7 +59,7 @@ public class EasyGraphLine extends EasyGraph {
         sortPointByX(list);
 
         // 获取排序后的第一个点
-        EasyLinePoint firstPointLine = (EasyLinePoint) list.get(0);
+        EasyPointLine firstPointLine = (EasyPointLine) list.get(0);
         coordinateToRaw(firstPointLine, cPOriginal, factorX, factorY);
 
         // 初始化path
@@ -82,12 +82,12 @@ public class EasyGraphLine extends EasyGraph {
     private void initDrawAttr(List<EasyPoint> list) {
         // 第一个点
         EasyPoint firstPoint = list.get(0);
-        EasyLinePoint attrPoint = (EasyLinePoint) firstPoint;
+        EasyPointLine attrPoint = (EasyPointLine) firstPoint;
 
         // 用第一个点的绘制参数向后设置
         int size = list.size();
         for (int i = 0; i < size; i++) {
-            EasyLinePoint p = (EasyLinePoint) list.get(i);
+            EasyPointLine p = (EasyPointLine) list.get(i);
             p.pointColor = attrPoint.pointColor;
             p.pointWidth = attrPoint.pointWidth;
             p.pointRadius = attrPoint.pointRadius;
@@ -111,19 +111,19 @@ public class EasyGraphLine extends EasyGraph {
         for (int i = 0; i < size; i++) {
             EasyPoint point = list.get(i);
             coordinateToRaw(point, cPOriginal, factorX, factorY);
-            EasyLinePoint rawPointLine = (EasyLinePoint) point;
+            EasyPointLine rawPointLine = (EasyPointLine) point;
             path.lineTo(rawPointLine.x, rawPointLine.y);
 
             paint.setColor(rawPointLine.pointColor);
             paint.setStrokeWidth(rawPointLine.pointWidth);
             switch (rawPointLine.pointType) {
-                case EasyLinePoint.POINT_TYPE_STROKE:
+                case EasyPointLine.POINT_TYPE_STROKE:
                     paint.setStyle(Paint.Style.STROKE);
                     break;
-                case EasyLinePoint.POINT_TYPE_FILL:
+                case EasyPointLine.POINT_TYPE_FILL:
                     paint.setStyle(Paint.Style.FILL);
                     break;
-                case EasyLinePoint.POINT_TYPE_FILL_AND_STROKE:
+                case EasyPointLine.POINT_TYPE_FILL_AND_STROKE:
                     paint.setStyle(Paint.Style.FILL_AND_STROKE);
                     break;
                 default:
@@ -144,7 +144,7 @@ public class EasyGraphLine extends EasyGraph {
         for (int i = 1; i < size; i++) {
             EasyPoint point = list.get(i);
             coordinateToRaw(point, cPOriginal, factorX, factorY);
-            EasyLinePoint rawPointLine = (EasyLinePoint) point;
+            EasyPointLine rawPointLine = (EasyPointLine) point;
             path.lineTo(rawPointLine.x, rawPointLine.y);
         }
         canvas.drawPath(path, strokePaint);
@@ -152,18 +152,18 @@ public class EasyGraphLine extends EasyGraph {
         // 绘制点
         for (int i = 0; i < size; i++) {
             EasyPoint point = list.get(i);
-            EasyLinePoint rawPointLine = (EasyLinePoint) point;
+            EasyPointLine rawPointLine = (EasyPointLine) point;
 
             paint.setColor(rawPointLine.pointColor);
             paint.setStrokeWidth(rawPointLine.pointWidth);
             switch (rawPointLine.pointType) {
-                case EasyLinePoint.POINT_TYPE_STROKE:
+                case EasyPointLine.POINT_TYPE_STROKE:
                     paint.setStyle(Paint.Style.STROKE);
                     break;
-                case EasyLinePoint.POINT_TYPE_FILL:
+                case EasyPointLine.POINT_TYPE_FILL:
                     paint.setStyle(Paint.Style.FILL);
                     break;
-                case EasyLinePoint.POINT_TYPE_FILL_AND_STROKE:
+                case EasyPointLine.POINT_TYPE_FILL_AND_STROKE:
                     paint.setStyle(Paint.Style.FILL_AND_STROKE);
                     break;
                 default:
