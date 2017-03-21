@@ -8,7 +8,7 @@ import com.hzn.library.EasyPoint;
  * 折线图使用的点，继承自EasyPoint
  * Created by huzn on 2017/3/17.
  */
-public class EasyLinePoint extends EasyPoint {
+public class EasyPointLine extends EasyPoint {
     /**
      * 点的颜色，默认Color.BLACK
      */
@@ -54,7 +54,7 @@ public class EasyLinePoint extends EasyPoint {
      * @param x x坐标
      * @param y y坐标
      */
-    public EasyLinePoint(float x, float y) {
+    public EasyPointLine(float x, float y) {
         super(x, y);
         this.pointColor = Color.BLACK;
         this.pointWidth = 5;
@@ -76,7 +76,7 @@ public class EasyLinePoint extends EasyPoint {
      * @param lineWidth   线段的宽度，单位px
      * @param pointType   点的类型，为POINT_TYPE_FILL,POINT_TYPE_STROKE或POINT_TYPE_FILL_AND_STROKE
      */
-    public EasyLinePoint(float x, float y, int pointColor, int pointWidth, int pointRadius, int lineColor, int lineWidth, int pointType) {
+    public EasyPointLine(float x, float y, int pointColor, int pointWidth, int pointRadius, int lineColor, int lineWidth, int pointType) {
         super(x, y);
         this.pointColor = pointColor;
         this.pointWidth = pointWidth;
