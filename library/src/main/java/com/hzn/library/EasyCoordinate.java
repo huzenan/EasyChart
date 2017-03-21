@@ -7,10 +7,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
-
-import com.hzn.library.line.EasyGraphLine;
-import com.hzn.library.line.EasyPointLine;
 
 import java.util.ArrayList;
 
@@ -44,13 +42,14 @@ public class EasyCoordinate extends View {
     // 右下角点的坐标
     private EasyPoint cPMax;
     // 原点坐标
-    private EasyPoint cPOriginal;
+    private EasyPoint pOriginal;
     // x轴方向上的缩放比例
     private float factorX;
     // y轴方向上的缩放比例
     private float factorY;
 
     private ArrayList<EasyPoint> coordinatePointList;
+    private ArrayList<EasyPoint> rawPointList;
     private EasyGraph graph;
 
     public EasyCoordinate(Context context) {
@@ -75,7 +74,7 @@ public class EasyCoordinate extends View {
         cPMin = new EasyPoint();
         pMax = new EasyPoint();
         cPMax = new EasyPoint();
-        cPOriginal = new EasyPoint();
+        pOriginal = new EasyPoint();
 
         cPaint = new Paint();
         cPaint.setAntiAlias(true);
@@ -84,15 +83,7 @@ public class EasyCoordinate extends View {
         cPaint.setStrokeWidth(axisWidth);
 
         coordinatePointList = new ArrayList<>();
-
-        // TODO 测试
-        ArrayList<EasyPoint> pointList = new ArrayList<>();
-        pointList.add(new EasyPointLine(100.25f, 120.4f, Color.BLUE, 5, 10, Color.RED, 6, EasyPointLine.POINT_TYPE_FILL));
-        pointList.add(new EasyPointLine(178.78f, 250.0f));
-        pointList.add(new EasyPointLine(55.55f, 300.2f));
-        pointList.add(new EasyPointLine(111.5f, 320.5f));
-        setDataList(pointList, new EasyGraphLine(), true);
-
+        rawPointList = new ArrayList<>();
     }
 
     @Override
@@ -117,9 +108,9 @@ public class EasyCoordinate extends View {
         pMax.set(width - getPaddingRight(), height - getPaddingBottom());
 
         // 第一次初始化坐标系
-        resetCoordinate(pMin.x + cWidth * originalXScale,
-                pMax.y - cHeight * originalYScale,
-                pMin.x, pMin.y, pMax.x, pMax.y);
+        float ox = pMin.x + cWidth * originalXScale;
+        float oy = pMax.y - cHeight * originalYScale;
+        resetCoordinate(ox, oy, -ox, oy - cHeight, pMax.x - ox, oy - pMin.y);
 
         setMeasuredDimension(width, height);
     }
@@ -137,21 +128,64 @@ public class EasyCoordinate extends View {
     private void resetCoordinate(float oX, float oY, float cMinX, float cMinY, float cMaxX, float cMaxY) {
         cPMin.set(cMinX, cMinY);
         cPMax.set(cMaxX, cMaxY);
-        cPOriginal.set(oX, oY);
+        pOriginal.set(oX, oY);
         factorX = cWidth / (cPMax.x - cPMin.x);
         factorY = cHeight / (cPMax.y - cPMin.y);
+        coordinateToRaw();
+    }
+
+    // 坐标点转屏幕坐标点
+    private void coordinateToRaw() {
+        if (null == coordinatePointList || coordinatePointList.size() == 0)
+            return;
+
+        rawPointList.clear();
+
+        EasyPoint point;
+        int size = coordinatePointList.size();
+        for (int i = 0; i < size; i++) {
+            point = coordinatePointList.get(i);
+            rawPointList.add(new EasyPoint(pOriginal.x + point.x * factorX, pOriginal.y - point.y * factorY));
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawLine(pMin.x, cPOriginal.y, pMax.x, cPOriginal.y, cPaint);
-        canvas.drawLine(cPOriginal.x, pMin.y, cPOriginal.x, pMax.y, cPaint);
+        canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
+        canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
         drawGraph(canvas);
     }
 
     // 绘制图形内容
     private void drawGraph(Canvas canvas) {
-        this.graph.drawGraph(coordinatePointList, cPOriginal, factorX, factorY, canvas);
+        this.graph.drawGraph(rawPointList, pOriginal, factorX, factorY, canvas);
+    }
+
+    private EasyPoint lastPoint = new EasyPoint();
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                lastPoint.set(event.getX(), event.getY());
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float x = event.getX();
+                float y = event.getY();
+                float deltaX = (x - lastPoint.x) * factorX;
+                float deltaY = (y - lastPoint.y) * factorY;
+                resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
+                        cPMin.x - deltaX, cPMin.y + deltaY,
+                        cPMax.x - deltaX, cPMax.y + deltaY);
+                lastPoint.set(x, y);
+                refresh();
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+            default:
+                break;
+        }
+        return true;
     }
 
     /**
@@ -195,7 +229,7 @@ public class EasyCoordinate extends View {
      * @param originalYScale 原点坐标y的位置，范围0.0f~1.0f，例如0.0f为最下端
      */
     public void refresh(float originalXScale, float originalYScale) {
-        cPOriginal.set(pMin.x + cWidth * originalXScale,
+        pOriginal.set(pMin.x + cWidth * originalXScale,
                 pMax.y - cHeight * originalYScale);
         invalidate();
     }

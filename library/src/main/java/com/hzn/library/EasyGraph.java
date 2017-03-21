@@ -2,6 +2,7 @@ package com.hzn.library;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,39 +15,17 @@ import java.util.List;
  */
 public abstract class EasyGraph {
 
-    protected Paint paint;
-    protected Paint strokePaint;
-
-    public EasyGraph() {
-        paint = new Paint();
-        strokePaint = new Paint();
-    }
-
     /**
      * 绘制图形
      *
-     * @param coordinatePointList 坐标点数据集
-     * @param cPOriginal          原点（屏幕坐标）
-     * @param factorX             x轴方向上的缩放比例
-     * @param factorY             y轴方向上的缩放比例
-     * @param canvas              Canvas
+     * @param rawPointList 屏幕坐标点数据集
+     * @param cPOriginal   原点（屏幕坐标）
+     * @param factorX      x轴方向上的缩放比例
+     * @param factorY      y轴方向上的缩放比例
+     * @param canvas       Canvas
      */
-    protected abstract void drawGraph(ArrayList<EasyPoint> coordinatePointList, EasyPoint cPOriginal,
+    protected abstract void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint cPOriginal,
                                       float factorX, float factorY, Canvas canvas);
-
-    /**
-     * 用于将坐标系坐标转为屏幕坐标
-     *
-     * @param coordinatePoint 坐标系坐标点
-     * @param cPOriginal      原点（屏幕坐标）
-     * @param factorX         x轴方向上的缩放比例
-     * @param factorY         y轴方向上的缩放比例
-     */
-    protected void coordinateToRaw(EasyPoint coordinatePoint, EasyPoint cPOriginal,
-                                   float factorX, float factorY) {
-        coordinatePoint.x = cPOriginal.x + coordinatePoint.x * factorX;
-        coordinatePoint.y = cPOriginal.y - coordinatePoint.y * factorY;
-    }
 
     /**
      * 根据x值对坐标点数据集进行升序排序

@@ -9,8 +9,10 @@
     >
 
     <com.hzn.library.EasyCoordinate
+        android:id="@+id/chart"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:padding="20dp"
         custom:ecAxisColor="@color/colorPrimary"
         custom:ecAxisWidth="2dp"
         custom:ecOriginalXScale="0.35"
