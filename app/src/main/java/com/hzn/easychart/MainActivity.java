@@ -11,12 +11,14 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    private EasyCoordinate easyCoordinate;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        EasyCoordinate easyCoordinate = (EasyCoordinate) findViewById(R.id.chart);
+        easyCoordinate = (EasyCoordinate) findViewById(R.id.chart);
         ArrayList<EasyPoint> pointList = new ArrayList<>();
         pointList.add(new EasyPoint(150, 300));
         pointList.add(new EasyPoint(100, 200));
@@ -25,7 +27,6 @@ public class MainActivity extends AppCompatActivity {
         pointList.add(new EasyPoint(-120, 80));
         pointList.add(new EasyPoint(250, 400));
         easyCoordinate.setDataList(pointList, new EasyGraphLine(), true);
-        easyCoordinate.refresh();
 
     }
 }

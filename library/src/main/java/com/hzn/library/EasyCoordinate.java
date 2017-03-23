@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,11 +27,28 @@ public class EasyCoordinate extends View {
     private float originalYScale;
     // 坐标轴的颜色，默认Color.BLACK
     private int axisColor;
-    // 坐标轴的宽度，单位dp，默认1dp
+    // 坐标轴的线段宽度，单位dp，默认2dp
     private int axisWidth;
+    // 网格的颜色，默认Color.GRAY
+    private int gridColor;
+    // 网格的线段宽度，单位dp，默认1dp
+    private int gridWidth;
+    // x方向上，网格绘制的单位标准，默认100个坐标单位
+    private int gridUnitX;
+    // y方向上，网格绘制的单位标准，默认100个坐标单位
+    private int gridUnitY;
+    // 初始化x轴方向上的缩放比例，默认1.0f
+    private float initFactorX;
+    // 初始化y轴方向上的缩放比例，默认1.0f
+    private float initFactorY;
 
     private Paint cPaint;
+    private Paint cGridPaint;
 
+    // 测量宽
+    private int width;
+    // 测量高
+    private int height;
     // 坐标系实际绘制宽度
     private float cWidth;
     // 坐标系实际绘制高度
@@ -69,7 +87,14 @@ public class EasyCoordinate extends View {
         originalYScale = a.getFloat(R.styleable.EasyCoordinate_ecOriginalYScale, 0.5f);
         axisColor = a.getColor(R.styleable.EasyCoordinate_ecAxisColor, Color.BLACK);
         axisWidth = a.getDimensionPixelOffset(R.styleable.EasyCoordinate_ecAxisWidth, (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 2.0f, getResources().getDisplayMetrics()));
+        gridColor = a.getColor(R.styleable.EasyCoordinate_ecGridColor, Color.GRAY);
+        gridWidth = a.getDimensionPixelOffset(R.styleable.EasyCoordinate_ecGridWidth, (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 1.0f, getResources().getDisplayMetrics()));
+        gridUnitX = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitX, 100);
+        gridUnitY = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitY, 100);
+        initFactorX = a.getFloat(R.styleable.EasyCoordinate_ecInitFactorX, 1.0f);
+        initFactorY = a.getFloat(R.styleable.EasyCoordinate_ecInitFactorY, 1.0f);
         a.recycle();
 
         pMin = new EasyPoint();
@@ -83,6 +108,11 @@ public class EasyCoordinate extends View {
         cPaint.setStyle(Paint.Style.STROKE);
         cPaint.setColor(axisColor);
         cPaint.setStrokeWidth(axisWidth);
+        cGridPaint = new Paint();
+        cGridPaint.setAntiAlias(true);
+        cGridPaint.setStyle(Paint.Style.STROKE);
+        cGridPaint.setColor(gridColor);
+        cGridPaint.setStrokeWidth(gridWidth);
 
         coordinatePointList = new ArrayList<>();
         rawPointList = new ArrayList<>();
@@ -91,13 +121,13 @@ public class EasyCoordinate extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int mode = MeasureSpec.getMode(widthMeasureSpec);
-        int width = MeasureSpec.getSize(widthMeasureSpec);
+        width = MeasureSpec.getSize(widthMeasureSpec);
         if (mode != MeasureSpec.EXACTLY) { // wrap_content
             width = width + getPaddingLeft() + getPaddingRight();
         }
 
         mode = MeasureSpec.getMode(heightMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
+        height = MeasureSpec.getSize(heightMeasureSpec);
         if (mode != MeasureSpec.EXACTLY) { // wrap_content
             height = height + getPaddingTop() + getPaddingBottom();
         }
@@ -128,12 +158,20 @@ public class EasyCoordinate extends View {
      * @param cMaxY 最大y值（坐标系）
      */
     private void resetCoordinate(float oX, float oY, float cMinX, float cMinY, float cMaxX, float cMaxY) {
-        cPMin.set(cMinX, cMinY);
-        cPMax.set(cMaxX, cMaxY);
-        pOriginal.set(oX, oY);
-        factorX = cWidth / (cPMax.x - cPMin.x);
-        factorY = cHeight / (cPMax.y - cPMin.y);
-        coordinateToRaw();
+        float tFactorX = cWidth / (cMaxX - cMinX);
+        float tFactorY = cHeight / (cMaxY - cMinY);
+        if (tFactorX >= 0.5f && tFactorX <= 2.0f) {
+            cPMin.set(cMinX, cPMin.y);
+            cPMax.set(cMaxX, cPMax.y);
+            pOriginal.set(oX, pOriginal.y);
+            factorX = tFactorX;
+        }
+        if (tFactorY >= 0.5f && tFactorY <= 2.0f) {
+            cPMin.set(cPMin.x, cMinY);
+            cPMax.set(cPMax.x, cMaxY);
+            pOriginal.set(pOriginal.x, oY);
+            factorY = tFactorY;
+        }
     }
 
     // 坐标点转屏幕坐标点
@@ -153,14 +191,89 @@ public class EasyCoordinate extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        // 固定绘制范围
+        canvas.clipRect(pMin.x, pMin.y, pMax.x, pMax.y);
+        // 网格
+        drawGrid(canvas);
         // x轴
         canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
         // y轴
         canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
-        // 网格
-
         // 图形
         drawGraph(canvas);
+        // 指向原点的箭头
+        drawOriginalArrow(canvas);
+    }
+
+    private void drawOriginalArrow(Canvas canvas) {
+        float startX, startY, endX, endY;
+        // 左上
+        if ((pOriginal.x < pMin.x || pOriginal.y < pMin.y) &&
+                (pOriginal.x < width / 2.0f && pOriginal.y < height / 2.0f)) {
+            startX = pOriginal.x < pMin.x ? pMin.x + 10.0f : pOriginal.x + 10.0f;
+            startY = pOriginal.y < pMin.y ? pMin.y + 10.0f : pOriginal.y + 10.0f;
+            endX = startX + 50.0f;
+            endY = startY + 50.0f;
+            drawArrow(canvas, startX, startY, endX, endY);
+        }
+        // 左下
+        if ((pOriginal.x < pMin.x || pOriginal.y > pMax.y) &&
+                (pOriginal.x < width / 2.0f && pOriginal.y > height / 2.0f)) {
+            startX = pOriginal.x < pMin.x ? pMin.x + 10.0f : pOriginal.x + 10.0f;
+            startY = pOriginal.y > pMax.y ? pMax.y - 10.0f : pOriginal.y - 10.0f;
+            endX = startX + 50.0f;
+            endY = startY - 50.0f;
+            drawArrow(canvas, startX, startY, endX, endY);
+        }
+        // 右上
+        if ((pOriginal.x > pMax.x || pOriginal.y < pMin.y) &&
+                (pOriginal.x > width / 2.0f && pOriginal.y < height / 2.0f)) {
+            startX = pOriginal.x > pMax.x ? pMax.x - 10.0f : pOriginal.x - 10.0f;
+            startY = pOriginal.y < pMin.y ? pMin.y + 10.0f : pOriginal.y + 10.0f;
+            endX = startX - 50.0f;
+            endY = startY + 50.0f;
+            drawArrow(canvas, startX, startY, endX, endY);
+        }
+        // 右下
+        if ((pOriginal.x > pMax.x || pOriginal.y > pMax.y) &&
+                (pOriginal.x > width / 2.0f && pOriginal.y > height / 2.0f)) {
+            startX = pOriginal.x > pMax.x ? pMax.x - 10.0f : pOriginal.x - 10.0f;
+            startY = pOriginal.y > pMax.y ? pMax.y - 10.0f : pOriginal.y - 10.0f;
+            endX = startX - 50.0f;
+            endY = startY - 50.0f;
+            drawArrow(canvas, startX, startY, endX, endY);
+        }
+    }
+
+    private void drawArrow(Canvas canvas, float startX, float startY, float endX, float endY) {
+        canvas.drawLine(startX, startY, endX, endY, cPaint);
+        canvas.drawLine(startX, startY, endX, startY, cPaint);
+        canvas.drawLine(startX, startY, startX, endY, cPaint);
+    }
+
+    // 绘制网格
+    private void drawGrid(Canvas canvas) {
+        float raw;
+        // 右半边
+        for (int x = 0; x < cPMax.x + gridUnitX; x += gridUnitX) {
+            raw = pOriginal.x + x * factorX;
+            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+        }
+        // 左半边
+        for (int x = 0; x > cPMin.x; x -= gridUnitX) {
+            raw = pOriginal.x + x * factorX;
+            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+        }
+        // 上半边
+        for (int y = 0; y < cPMax.y; y += gridUnitY) {
+            raw = pOriginal.y - y * factorY;
+            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+        }
+        // 下半边
+        for (int y = 0; y > cPMin.y - gridUnitY; y -= gridUnitY) {
+            raw = pOriginal.y - y * factorY;
+            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+        }
     }
 
     // 绘制图形内容
@@ -186,7 +299,7 @@ public class EasyCoordinate extends View {
 
                 case MotionEvent.ACTION_MOVE:
                     if (event.getPointerCount() == 1) { // 单指操作
-                        EasyPoint point = pointList.get(pointerIndex);
+                        EasyPoint point = pointList.get(pointerId);
                         float x = event.getX(pointerIndex);
                         float y = event.getY(pointerIndex);
                         float deltaX = (x - point.x) * factorX;
@@ -194,10 +307,11 @@ public class EasyCoordinate extends View {
                         moveBy(deltaX, deltaY);
                         point.set(x, y);
                     } else { // 多指操作
-                        float minDeltaX = 0.0f;
-                        float maxDeltaX = 0.0f;
-                        float minDeltaY = 0.0f;
-                        float maxDeltaY = 0.0f;
+                        // 得到最长的两条矢量
+                        float maxDeltaSqr1 = 0.0f;
+                        float maxDeltaSqr2 = 0.0f;
+                        EasyVector maxVector1 = new EasyVector();
+                        EasyVector maxVector2 = new EasyVector();
                         for (int i = 0; i < event.getPointerCount(); i++) {
                             int movePointerId = event.getPointerId(i);
                             int movePointerIndex = event.findPointerIndex(movePointerId);
@@ -207,21 +321,23 @@ public class EasyCoordinate extends View {
                             float deltaX = (x - point.x) * factorX;
                             float deltaY = (y - point.y) * factorY;
 
-                            if (deltaX < 0 && deltaX < minDeltaX)
-                                minDeltaX = deltaX;
-                            else if (deltaX > 0 && deltaX > maxDeltaX)
-                                maxDeltaX = deltaX;
-                            if (deltaY < 0 && deltaY < minDeltaY)
-                                minDeltaY = deltaY;
-                            else if (deltaY > 0 && deltaY > maxDeltaY)
-                                maxDeltaY = deltaY;
-
-                            resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
-                                    cPMin.x - minDeltaX, cPMin.y + minDeltaY,
-                                    cPMax.x - maxDeltaX, cPMax.y + maxDeltaY);
+                            if (maxDeltaSqr1 < deltaX * deltaX + deltaY * deltaY) {
+                                maxDeltaSqr1 = deltaX * deltaX + deltaY * deltaY;
+                                maxVector1.set(point.x, point.y, x, y);
+                            } else if (maxDeltaSqr2 < deltaX * deltaX + deltaY * deltaY) {
+                                maxDeltaSqr2 = deltaX * deltaX + deltaY * deltaY;
+                                maxVector2.set(point.x, point.y, x, y);
+                            }
 
                             point.set(x, y);
                         }
+
+                        // 通过矢量的起始点的中点，和终点的中点，计算出需要平移的偏移量
+                        float startMidX = (maxVector1.startX + maxVector2.startX) / 2.0f;
+                        float endMidX = (maxVector1.endX + maxVector2.endX) / 2.0f;
+                        float startMidY = (maxVector1.startY + maxVector2.startY) / 2.0f;
+                        float endMidY = (maxVector1.endY + maxVector2.endY) / 2.0f;
+                        moveBy(endMidX - startMidX, endMidY - startMidY);
                     }
                     refresh();
                     break;
@@ -229,6 +345,7 @@ public class EasyCoordinate extends View {
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
+                    pointList.remove(pointerId);
                     break;
 
                 default:
@@ -250,10 +367,6 @@ public class EasyCoordinate extends View {
                 cPMax.x - deltaX, cPMax.y + deltaY);
     }
 
-    public void scaleBy() {
-
-    }
-
     /**
      * 设置坐标点数据集
      *
@@ -267,6 +380,8 @@ public class EasyCoordinate extends View {
         if (clear)
             this.coordinatePointList.clear();
         this.coordinatePointList.addAll(pointList);
+
+        refresh();
     }
 
     /**
@@ -285,6 +400,7 @@ public class EasyCoordinate extends View {
      * 刷新视图
      */
     public void refresh() {
+        coordinateToRaw();
         invalidate();
     }
 
@@ -298,5 +414,19 @@ public class EasyCoordinate extends View {
         pOriginal.set(pMin.x + cWidth * originalXScale,
                 pMax.y - cHeight * originalYScale);
         invalidate();
+    }
+
+    private static class EasyVector {
+        public float startX;
+        public float startY;
+        public float endX;
+        public float endY;
+
+        public void set(float startX, float startY, float endX, float endY) {
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+        }
     }
 }

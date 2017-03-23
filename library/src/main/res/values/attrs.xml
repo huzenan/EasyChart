@@ -5,5 +5,11 @@
         <attr name="ecOriginalYScale" format="float"/>
         <attr name="ecAxisColor" format="color"/>
         <attr name="ecAxisWidth" format="dimension"/>
+        <attr name="ecGridColor" format="color"/>
+        <attr name="ecGridWidth" format="dimension"/>
+        <attr name="ecGridUnitX" format="integer"/>
+        <attr name="ecGridUnitY" format="integer"/>
+        <attr name="ecInitFactorX" format="float"/>
+        <attr name="ecInitFactorY" format="float"/>
     </declare-styleable>
 </resources>

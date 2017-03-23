@@ -15,7 +15,13 @@
         android:padding="20dp"
         custom:ecAxisColor="@color/colorPrimary"
         custom:ecAxisWidth="2dp"
+        custom:ecGridColor="#ccc18a"
+        custom:ecGridWidth="1dp"
+        custom:ecGridUnitX="50"
+        custom:ecGridUnitY="50"
         custom:ecOriginalXScale="0.35"
         custom:ecOriginalYScale="0.35"
+        custom:ecInitFactorX="2"
+        custom:ecInitFactorY="2"
         />
 </RelativeLayout>
