@@ -202,11 +202,14 @@ public class EasyCoordinate extends View {
         // 网格
         drawGrid(canvas);
         // x轴
-        canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
+        if (pOriginal.y > pMin.y && pOriginal.y < pMax.y)
+            canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
         // y轴
-        canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
+        if (pOriginal.x > pMin.x && pOriginal.x < pMax.x)
+            canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
         // 图形
-        drawGraph(canvas);
+        if (null != graph)
+            this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
         // 指向原点的箭头
         drawOriginalArrow(canvas);
     }
@@ -259,35 +262,41 @@ public class EasyCoordinate extends View {
 
     // 绘制网格
     private void drawGrid(Canvas canvas) {
-        Log.d("atag", cPMin.x + ", " + cPMax.x + "     " + cPMin.y + ", " + cPMax.y);
-        Log.d("atag", pOriginal.x + "    " + factorX + "     " + (pOriginal.x + cPMin.x * factorX));
+        Log.d("atag", "original  " + pOriginal.x);
+        Log.d("atag", "factorX  " + factorX);
+        Log.d("atag", "cPMin.x  " + cPMin.x);
+        Log.d("atag", "cPMax.x  " + cPMax.x);
+        Log.d("atag", "cPMin.x raw    " + (pOriginal.x + cPMin.x * factorX));
+        Log.d("atag", "=====================================================================");
         float raw;
         // 右半边
-        for (int x = 0; x < cPMax.x + gridUnitX; x += gridUnitX) {
-            raw = pOriginal.x + x * factorX;
-            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+        if (pOriginal.x < pMax.x) {
+            for (int x = 0; x < cPMax.x + gridUnitX; x += gridUnitX) {
+                raw = pOriginal.x + x * factorX;
+                canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+            }
         }
         // 左半边
-        for (int x = 0; x > cPMin.x; x -= gridUnitX) {
-            raw = pOriginal.x + x * factorX;
-            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+        if (pOriginal.x > pMin.x) {
+            for (int x = 0; x > cPMin.x; x -= gridUnitX) {
+                raw = pOriginal.x + x * factorX;
+                canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+            }
         }
         // 上半边
-        for (int y = 0; y < cPMax.y; y += gridUnitY) {
-            raw = pOriginal.y - y * factorY;
-            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+        if (pOriginal.y > pMin.y) {
+            for (int y = 0; y < cPMax.y; y += gridUnitY) {
+                raw = pOriginal.y - y * factorY;
+                canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+            }
         }
         // 下半边
-        for (int y = 0; y > cPMin.y - gridUnitY; y -= gridUnitY) {
-            raw = pOriginal.y - y * factorY;
-            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+        if (pOriginal.y < pMax.y) {
+            for (int y = 0; y > cPMin.y - gridUnitY; y -= gridUnitY) {
+                raw = pOriginal.y - y * factorY;
+                canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+            }
         }
-    }
-
-    // 绘制图形内容
-    private void drawGraph(Canvas canvas) {
-        if (null != graph)
-            this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
     }
 
     private Map<Integer, EasyPoint> pointList = new HashMap<>();
