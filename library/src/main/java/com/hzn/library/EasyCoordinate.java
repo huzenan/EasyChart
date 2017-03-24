@@ -161,15 +161,15 @@ public class EasyCoordinate extends View {
         float tFactorX = cWidth / (cMaxX - cMinX);
         float tFactorY = cHeight / (cMaxY - cMinY);
         if (tFactorX >= 0.5f && tFactorX <= 2.0f) {
-            cPMin.set(cMinX, cPMin.y);
-            cPMax.set(cMaxX, cPMax.y);
-            pOriginal.set(oX, pOriginal.y);
+            cPMin.x = cMinX;
+            cPMax.x = cMaxX;
+            pOriginal.x = oX;
             factorX = tFactorX;
         }
         if (tFactorY >= 0.5f && tFactorY <= 2.0f) {
-            cPMin.set(cPMin.x, cMinY);
-            cPMax.set(cPMax.x, cMaxY);
-            pOriginal.set(pOriginal.x, oY);
+            cPMin.y = cMinY;
+            cPMax.y = cMaxY;
+            pOriginal.y = oY;
             factorY = tFactorY;
         }
     }
@@ -282,6 +282,9 @@ public class EasyCoordinate extends View {
     }
 
     private Map<Integer, EasyPoint> pointList = new HashMap<>();
+    private Map<Integer, EasyPoint> downPointList = new HashMap<>();
+    private EasyPoint cPMinDown = new EasyPoint();
+    private EasyPoint cPMaxDown = new EasyPoint();
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -295,6 +298,10 @@ public class EasyCoordinate extends View {
                 case MotionEvent.ACTION_POINTER_DOWN:
                     pointList.put(pointerId, new EasyPoint(
                             event.getX(pointerIndex), event.getY(pointerIndex)));
+                    downPointList.put(pointerId, new EasyPoint(
+                            event.getX(pointerIndex), event.getY(pointerIndex)));
+                    cPMinDown.set(cPMin.x, cPMin.y);
+                    cPMaxDown.set(cPMax.x, cPMax.y);
                     break;
 
                 case MotionEvent.ACTION_MOVE:
@@ -302,42 +309,53 @@ public class EasyCoordinate extends View {
                         EasyPoint point = pointList.get(pointerId);
                         float x = event.getX(pointerIndex);
                         float y = event.getY(pointerIndex);
-                        float deltaX = (x - point.x) * factorX;
-                        float deltaY = (y - point.y) * factorY;
+                        float deltaX = (x - point.x);
+                        float deltaY = (y - point.y);
                         moveBy(deltaX, deltaY);
                         point.set(x, y);
                     } else { // 多指操作
                         // 得到最长的两条矢量
-                        float maxDeltaSqr1 = 0.0f;
-                        float maxDeltaSqr2 = 0.0f;
+                        float maxDeltaSqr1 = -1.0f;
+                        float maxDeltaSqr2 = -1.0f;
                         EasyVector maxVector1 = new EasyVector();
                         EasyVector maxVector2 = new EasyVector();
                         for (int i = 0; i < event.getPointerCount(); i++) {
                             int movePointerId = event.getPointerId(i);
                             int movePointerIndex = event.findPointerIndex(movePointerId);
-                            EasyPoint point = pointList.get(movePointerId);
+                            EasyPoint point = downPointList.get(movePointerId);
                             float x = event.getX(movePointerIndex);
                             float y = event.getY(movePointerIndex);
-                            float deltaX = (x - point.x) * factorX;
-                            float deltaY = (y - point.y) * factorY;
+                            float deltaX = (x - point.x);
+                            float deltaY = (y - point.y);
+                            float deltaSqr = deltaX * deltaX + deltaY * deltaY;
 
-                            if (maxDeltaSqr1 < deltaX * deltaX + deltaY * deltaY) {
-                                maxDeltaSqr1 = deltaX * deltaX + deltaY * deltaY;
-                                maxVector1.set(point.x, point.y, x, y);
-                            } else if (maxDeltaSqr2 < deltaX * deltaX + deltaY * deltaY) {
-                                maxDeltaSqr2 = deltaX * deltaX + deltaY * deltaY;
-                                maxVector2.set(point.x, point.y, x, y);
+                            if (maxDeltaSqr2 < deltaSqr) {
+                                if (maxDeltaSqr1 < deltaSqr) {
+                                    maxDeltaSqr2 = maxDeltaSqr1;
+                                    maxDeltaSqr1 = deltaSqr;
+                                    maxVector2.set(maxVector1);
+                                    maxVector1.set(point.x, point.y, x, y);
+                                } else {
+                                    maxDeltaSqr2 = deltaSqr;
+                                    maxVector2.set(point.x, point.y, x, y);
+                                }
                             }
-
-                            point.set(x, y);
                         }
 
-                        // 通过矢量的起始点的中点，和终点的中点，计算出需要平移的偏移量
-                        float startMidX = (maxVector1.startX + maxVector2.startX) / 2.0f;
-                        float endMidX = (maxVector1.endX + maxVector2.endX) / 2.0f;
-                        float startMidY = (maxVector1.startY + maxVector2.startY) / 2.0f;
-                        float endMidY = (maxVector1.endY + maxVector2.endY) / 2.0f;
-                        moveBy(endMidX - startMidX, endMidY - startMidY);
+                        // 通过矢量的距离计算出x方向和y方向各需要缩放的量
+                        float endDistanceX = Math.abs(maxVector1.endX - maxVector2.endX);
+                        float startDistanceX = Math.abs(maxVector1.startX - maxVector2.startX);
+                        float deltaX = (endDistanceX - startDistanceX) / 2.0f;
+
+                        float endDistanceY = Math.abs(maxVector1.endY - maxVector2.endY);
+                        float startDistanceY = Math.abs(maxVector1.startY - maxVector2.startY);
+                        float deltaY = (endDistanceY - startDistanceY) / 2.0f;
+
+                        resetCoordinate(pOriginal.x, pOriginal.y,
+                                cPMinDown.x + deltaX, cPMinDown.y + deltaY,
+                                cPMaxDown.x - deltaX, cPMaxDown.y - deltaY);
+
+                        scaleBy(deltaX, deltaY);
                     }
                     refresh();
                     break;
@@ -346,6 +364,7 @@ public class EasyCoordinate extends View {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                     pointList.remove(pointerId);
+                    downPointList.remove(pointerId);
                     break;
 
                 default:
@@ -365,6 +384,18 @@ public class EasyCoordinate extends View {
         resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
                 cPMin.x - deltaX, cPMin.y + deltaY,
                 cPMax.x - deltaX, cPMax.y + deltaY);
+    }
+
+    /**
+     * 缩放整个坐标系
+     *
+     * @param deltaX x方向的缩放量
+     * @param deltaY y方向的缩放量
+     */
+    public void scaleBy(float deltaX, float deltaY) {
+        resetCoordinate(pOriginal.x, pOriginal.y,
+                cPMin.x + deltaX, cPMin.y + deltaY,
+                cPMax.x - deltaX, cPMax.y - deltaY);
     }
 
     /**
@@ -427,6 +458,13 @@ public class EasyCoordinate extends View {
             this.startY = startY;
             this.endX = endX;
             this.endY = endY;
+        }
+
+        public void set(EasyVector vector) {
+            this.startX = vector.startX;
+            this.startY = vector.startY;
+            this.endX = vector.endX;
+            this.endY = vector.endY;
         }
     }
 }
