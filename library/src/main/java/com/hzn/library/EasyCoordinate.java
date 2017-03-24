@@ -22,9 +22,9 @@ import java.util.Map;
 public class EasyCoordinate extends View {
 
     // 原点坐标x的位置，范围0.0f~1.0f，例如0.0f为最左端，默认0.5f
-    private float originalXScale;
+    private float originalXPercent;
     // 原点坐标y的位置，范围0.0f~1.0f，例如0.0f为最下端，默认0.5f
-    private float originalYScale;
+    private float originalYPercent;
     // 坐标轴的颜色，默认Color.BLACK
     private int axisColor;
     // 坐标轴的线段宽度，单位dp，默认2dp
@@ -37,10 +37,14 @@ public class EasyCoordinate extends View {
     private int gridUnitX;
     // y方向上，网格绘制的单位标准，默认100个坐标单位
     private int gridUnitY;
-    // 初始化x轴方向上的缩放比例，默认1.0f
-    private float initFactorX;
-    // 初始化y轴方向上的缩放比例，默认1.0f
-    private float initFactorY;
+    // x轴方向上的缩放比例的最小值，默认0.5f
+    private float minFactorX;
+    // x轴方向上的缩放比例的最大值，默认2.0f
+    private float maxFactorX;
+    // y轴方向上的缩放比例的最小值，默认0.5f
+    private float minFactorY;
+    // y轴方向上的缩放比例的最大值，默认2.0f
+    private float maxFactorY;
 
     private Paint cPaint;
     private Paint cGridPaint;
@@ -83,8 +87,8 @@ public class EasyCoordinate extends View {
     public EasyCoordinate(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.EasyCoordinate, defStyleAttr, 0);
-        originalXScale = a.getFloat(R.styleable.EasyCoordinate_ecOriginalXScale, 0.5f);
-        originalYScale = a.getFloat(R.styleable.EasyCoordinate_ecOriginalYScale, 0.5f);
+        originalXPercent = a.getFloat(R.styleable.EasyCoordinate_ecOriginalXPercent, 0.5f);
+        originalYPercent = a.getFloat(R.styleable.EasyCoordinate_ecOriginalYPercent, 0.5f);
         axisColor = a.getColor(R.styleable.EasyCoordinate_ecAxisColor, Color.BLACK);
         axisWidth = a.getDimensionPixelOffset(R.styleable.EasyCoordinate_ecAxisWidth, (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 2.0f, getResources().getDisplayMetrics()));
@@ -93,8 +97,10 @@ public class EasyCoordinate extends View {
                 TypedValue.COMPLEX_UNIT_DIP, 1.0f, getResources().getDisplayMetrics()));
         gridUnitX = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitX, 100);
         gridUnitY = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitY, 100);
-        initFactorX = a.getFloat(R.styleable.EasyCoordinate_ecInitFactorX, 1.0f);
-        initFactorY = a.getFloat(R.styleable.EasyCoordinate_ecInitFactorY, 1.0f);
+        minFactorX = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorX, 0.5f);
+        maxFactorX = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorX, 2.0f);
+        minFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorY, 0.5f);
+        maxFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorY, 2.0f);
         a.recycle();
 
         pMin = new EasyPoint();
@@ -140,8 +146,8 @@ public class EasyCoordinate extends View {
         pMax.set(width - getPaddingRight(), height - getPaddingBottom());
 
         // 第一次初始化坐标系
-        float ox = pMin.x + cWidth * originalXScale;
-        float oy = pMax.y - cHeight * originalYScale;
+        float ox = pMin.x + cWidth * originalXPercent;
+        float oy = pMax.y - cHeight * originalYPercent;
         resetCoordinate(ox, oy, -ox, oy - cHeight, pMax.x - ox, oy - pMin.y);
 
         setMeasuredDimension(width, height);
@@ -160,13 +166,13 @@ public class EasyCoordinate extends View {
     private void resetCoordinate(float oX, float oY, float cMinX, float cMinY, float cMaxX, float cMaxY) {
         float tFactorX = cWidth / (cMaxX - cMinX);
         float tFactorY = cHeight / (cMaxY - cMinY);
-        if (tFactorX >= 0.5f && tFactorX <= 2.0f) {
+        if (tFactorX >= minFactorX && tFactorX <= maxFactorX) {
             cPMin.x = cMinX;
             cPMax.x = cMaxX;
             pOriginal.x = oX;
             factorX = tFactorX;
         }
-        if (tFactorY >= 0.5f && tFactorY <= 2.0f) {
+        if (tFactorY >= minFactorY && tFactorY <= maxFactorY) {
             cPMin.y = cMinY;
             cPMax.y = cMaxY;
             pOriginal.y = oY;
@@ -253,6 +259,8 @@ public class EasyCoordinate extends View {
 
     // 绘制网格
     private void drawGrid(Canvas canvas) {
+        Log.d("atag", cPMin.x + ", " + cPMax.x + "     " + cPMin.y + ", " + cPMax.y);
+        Log.d("atag", pOriginal.x + "    " + factorX + "     " + (pOriginal.x + cPMin.x * factorX));
         float raw;
         // 右半边
         for (int x = 0; x < cPMax.x + gridUnitX; x += gridUnitX) {
@@ -278,7 +286,8 @@ public class EasyCoordinate extends View {
 
     // 绘制图形内容
     private void drawGraph(Canvas canvas) {
-        this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
+        if (null != graph)
+            this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
     }
 
     private Map<Integer, EasyPoint> pointList = new HashMap<>();
@@ -309,8 +318,8 @@ public class EasyCoordinate extends View {
                         EasyPoint point = pointList.get(pointerId);
                         float x = event.getX(pointerIndex);
                         float y = event.getY(pointerIndex);
-                        float deltaX = (x - point.x);
-                        float deltaY = (y - point.y);
+                        float deltaX = x - point.x;
+                        float deltaY = y - point.y;
                         moveBy(deltaX, deltaY);
                         point.set(x, y);
                     } else { // 多指操作
@@ -325,8 +334,8 @@ public class EasyCoordinate extends View {
                             EasyPoint point = downPointList.get(movePointerId);
                             float x = event.getX(movePointerIndex);
                             float y = event.getY(movePointerIndex);
-                            float deltaX = (x - point.x);
-                            float deltaY = (y - point.y);
+                            float deltaX = x - point.x;
+                            float deltaY = y - point.y;
                             float deltaSqr = deltaX * deltaX + deltaY * deltaY;
 
                             if (maxDeltaSqr2 < deltaSqr) {
