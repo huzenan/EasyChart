@@ -148,7 +148,7 @@ public class EasyCoordinate extends View {
         // 第一次初始化坐标系
         float ox = pMin.x + cWidth * originalXPercent;
         float oy = pMax.y - cHeight * originalYPercent;
-        resetCoordinate(ox, oy, -ox, oy - cHeight, pMax.x - ox, oy - pMin.y);
+        resetCoordinate(ox, oy, -(ox - pMin.x), -(pMax.y - oy), pMax.x - ox, oy - pMin.y);
 
         setMeasuredDimension(width, height);
     }
