@@ -455,7 +455,13 @@ public class EasyCoordinate extends View {
     public void refresh(float originalXPercent, float originalYPercent) {
         pOriginal.set(pMin.x + cWidth * originalXPercent,
                 pMax.y - cHeight * originalYPercent);
-        invalidate();
+        refresh();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        refresh();
     }
 
     private static class EasyVector {
