@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -29,7 +28,7 @@ public class EasyCoordinate extends View {
     private int axisColor;
     // 坐标轴的线段宽度，单位dp，默认2dp
     private int axisWidth;
-    // 网格的颜色，默认Color.GRAY
+    // 网格的颜色，默认不绘制网格
     private int gridColor;
     // 网格的线段宽度，单位dp，默认1dp
     private int gridWidth;
@@ -45,9 +44,12 @@ public class EasyCoordinate extends View {
     private float minFactorY;
     // y轴方向上的缩放比例的最大值，默认2.0f
     private float maxFactorY;
+    // 背景颜色，默认不绘制背景颜色
+    private int bgColor;
 
     private Paint cPaint;
     private Paint cGridPaint;
+    private Paint cBgPaint;
 
     // 测量宽
     private int width;
@@ -92,7 +94,7 @@ public class EasyCoordinate extends View {
         axisColor = a.getColor(R.styleable.EasyCoordinate_ecAxisColor, Color.BLACK);
         axisWidth = a.getDimensionPixelOffset(R.styleable.EasyCoordinate_ecAxisWidth, (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 2.0f, getResources().getDisplayMetrics()));
-        gridColor = a.getColor(R.styleable.EasyCoordinate_ecGridColor, Color.GRAY);
+        gridColor = a.getColor(R.styleable.EasyCoordinate_ecGridColor, 0);
         gridWidth = a.getDimensionPixelOffset(R.styleable.EasyCoordinate_ecGridWidth, (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 1.0f, getResources().getDisplayMetrics()));
         gridUnitX = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitX, 100);
@@ -101,6 +103,7 @@ public class EasyCoordinate extends View {
         maxFactorX = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorX, 2.0f);
         minFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorY, 0.5f);
         maxFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorY, 2.0f);
+        bgColor = a.getInt(R.styleable.EasyCoordinate_ecBackgroundColor, 0);
         a.recycle();
 
         pMin = new EasyPoint();
@@ -119,6 +122,9 @@ public class EasyCoordinate extends View {
         cGridPaint.setStyle(Paint.Style.STROKE);
         cGridPaint.setColor(gridColor);
         cGridPaint.setStrokeWidth(gridWidth);
+        cBgPaint = new Paint();
+        cBgPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        cBgPaint.setColor(bgColor);
 
         coordinatePointList = new ArrayList<>();
         rawPointList = new ArrayList<>();
@@ -199,8 +205,12 @@ public class EasyCoordinate extends View {
     protected void onDraw(Canvas canvas) {
         // 固定绘制范围
         canvas.clipRect(pMin.x, pMin.y, pMax.x, pMax.y);
+        // 绘制背景
+        if (bgColor != 0)
+            canvas.drawRect(pMin.x, pMin.y, pMax.x, pMax.y, cBgPaint);
         // 网格
-        drawGrid(canvas);
+        if (gridColor != 0)
+            drawGrid(canvas);
         // x轴
         if (pOriginal.y > pMin.y && pOriginal.y < pMax.y)
             canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
@@ -262,40 +272,21 @@ public class EasyCoordinate extends View {
 
     // 绘制网格
     private void drawGrid(Canvas canvas) {
-        Log.d("atag", "original  " + pOriginal.x);
-        Log.d("atag", "factorX  " + factorX);
-        Log.d("atag", "cPMin.x  " + cPMin.x);
-        Log.d("atag", "cPMax.x  " + cPMax.x);
-        Log.d("atag", "cPMin.x raw    " + (pOriginal.x + cPMin.x * factorX));
-        Log.d("atag", "=====================================================================");
+        // 纵向
+        int start = (int) (cPMin.x / gridUnitX) - 1;
+        int end = (int) (cPMax.x / gridUnitX) + 1;
         float raw;
-        // 右半边
-        if (pOriginal.x < pMax.x) {
-            for (int x = 0; x < cPMax.x + gridUnitX; x += gridUnitX) {
-                raw = pOriginal.x + x * factorX;
-                canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
-            }
+        for (int x = start; x <= end; x++) {
+            raw = pOriginal.x + gridUnitX * factorX * x;
+            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
         }
-        // 左半边
-        if (pOriginal.x > pMin.x) {
-            for (int x = 0; x > cPMin.x; x -= gridUnitX) {
-                raw = pOriginal.x + x * factorX;
-                canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
-            }
-        }
-        // 上半边
-        if (pOriginal.y > pMin.y) {
-            for (int y = 0; y < cPMax.y; y += gridUnitY) {
-                raw = pOriginal.y - y * factorY;
-                canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
-            }
-        }
-        // 下半边
-        if (pOriginal.y < pMax.y) {
-            for (int y = 0; y > cPMin.y - gridUnitY; y -= gridUnitY) {
-                raw = pOriginal.y - y * factorY;
-                canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
-            }
+
+        // 横向
+        start = (int) (cPMin.y / gridUnitY) - 1;
+        end = (int) (cPMax.y / gridUnitY) + 1;
+        for (int y = start; y <= end; y++) {
+            raw = pOriginal.y - gridUnitY * factorY * y;
+            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
         }
     }
 
@@ -361,19 +352,15 @@ public class EasyCoordinate extends View {
                         }
 
                         // 通过矢量的距离计算出x方向和y方向各需要缩放的量
-                        float endDistanceX = Math.abs(maxVector1.endX - maxVector2.endX);
-                        float startDistanceX = Math.abs(maxVector1.startX - maxVector2.startX);
-                        float deltaX = (endDistanceX - startDistanceX) / 2.0f;
+                        float endDistance = Math.abs(maxVector1.endX - maxVector2.endX);
+                        float startDistance = Math.abs(maxVector1.startX - maxVector2.startX);
+                        float deltaDistanceX = endDistance - startDistance;
 
-                        float endDistanceY = Math.abs(maxVector1.endY - maxVector2.endY);
-                        float startDistanceY = Math.abs(maxVector1.startY - maxVector2.startY);
-                        float deltaY = (endDistanceY - startDistanceY) / 2.0f;
+                        endDistance = Math.abs(maxVector1.endY - maxVector2.endY);
+                        startDistance = Math.abs(maxVector1.startY - maxVector2.startY);
+                        float deltaDistanceY = endDistance - startDistance;
 
-                        resetCoordinate(pOriginal.x, pOriginal.y,
-                                cPMinDown.x + deltaX, cPMinDown.y + deltaY,
-                                cPMaxDown.x - deltaX, cPMaxDown.y - deltaY);
-
-                        scaleBy(deltaX, deltaY);
+                        scaleBy(deltaDistanceX, deltaDistanceY);
                     }
                     refresh();
                     break;
@@ -399,21 +386,27 @@ public class EasyCoordinate extends View {
      * @param deltaY y方向的偏移量
      */
     public void moveBy(float deltaX, float deltaY) {
+        float fDeltaX = deltaX / factorX;
+        float fDeltaY = deltaY / factorY;
         resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
-                cPMin.x - deltaX, cPMin.y + deltaY,
-                cPMax.x - deltaX, cPMax.y + deltaY);
+                cPMin.x - fDeltaX, cPMin.y + fDeltaY,
+                cPMax.x - fDeltaX, cPMax.y + fDeltaY);
     }
 
     /**
      * 缩放整个坐标系
      *
-     * @param deltaX x方向的缩放量
-     * @param deltaY y方向的缩放量
+     * @param deltaDistanceX x方向的缩放距离
+     * @param deltaDistanceY y方向的缩放距离
      */
-    public void scaleBy(float deltaX, float deltaY) {
+    public void scaleBy(float deltaDistanceX, float deltaDistanceY) {
+        float deltaMinX = (-cPMin.x / (cPMax.x - cPMin.x)) * deltaDistanceX;
+        float deltaMaxX = deltaDistanceX - deltaMinX;
+        float deltaMinY = (-cPMin.y / (cPMax.y - cPMin.y)) * deltaDistanceY;
+        float deltaMaxY = deltaDistanceY - deltaMinY;
         resetCoordinate(pOriginal.x, pOriginal.y,
-                cPMin.x + deltaX, cPMin.y + deltaY,
-                cPMax.x - deltaX, cPMax.y - deltaY);
+                cPMinDown.x + deltaMinX, cPMinDown.y + deltaMinY,
+                cPMaxDown.x - deltaMaxX, cPMaxDown.y - deltaMaxY);
     }
 
     /**
@@ -456,12 +449,12 @@ public class EasyCoordinate extends View {
     /**
      * 设置原点并刷新视图
      *
-     * @param originalXScale 原点坐标x的位置，范围0.0f~1.0f，例如0.0f为最左端
-     * @param originalYScale 原点坐标y的位置，范围0.0f~1.0f，例如0.0f为最下端
+     * @param originalXPercent 原点坐标x的位置，范围0.0f~1.0f，例如0.0f为最左端
+     * @param originalYPercent 原点坐标y的位置，范围0.0f~1.0f，例如0.0f为最下端
      */
-    public void refresh(float originalXScale, float originalYScale) {
-        pOriginal.set(pMin.x + cWidth * originalXScale,
-                pMax.y - cHeight * originalYScale);
+    public void refresh(float originalXPercent, float originalYPercent) {
+        pOriginal.set(pMin.x + cWidth * originalXPercent,
+                pMax.y - cHeight * originalYPercent);
         invalidate();
     }
 
