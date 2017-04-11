@@ -18,5 +18,6 @@
         <attr name="ecInitMinY" format="float"/>
         <attr name="ecInitMaxY" format="float"/>
         <attr name="ecBackgroundColor" format="color"/>
+        <attr name="ecDrawArrow" format="boolean"/>
     </declare-styleable>
 </resources>

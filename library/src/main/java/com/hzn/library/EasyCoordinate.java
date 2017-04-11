@@ -46,6 +46,8 @@ public class EasyCoordinate extends View {
     private float maxFactorY;
     // 背景颜色，默认不绘制背景颜色
     private int bgColor;
+    // 是否在坐标轴移出显示区域时，显示箭头，默认绘制
+    private boolean drawArrow;
 
     private Paint cPaint;
     private Paint cGridPaint;
@@ -104,6 +106,7 @@ public class EasyCoordinate extends View {
         minFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorY, 0.5f);
         maxFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorY, 2.0f);
         bgColor = a.getInt(R.styleable.EasyCoordinate_ecBackgroundColor, 0);
+        drawArrow = a.getBoolean(R.styleable.EasyCoordinate_ecDrawArrow, true);
         a.recycle();
 
         pMin = new EasyPoint();
@@ -203,8 +206,9 @@ public class EasyCoordinate extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        // 固定绘制范围
+        // 裁剪绘制范围
         canvas.clipRect(pMin.x, pMin.y, pMax.x, pMax.y);
+
         // 绘制背景
         if (bgColor != 0)
             canvas.drawRect(pMin.x, pMin.y, pMax.x, pMax.y, cBgPaint);
@@ -221,7 +225,8 @@ public class EasyCoordinate extends View {
         if (null != graph)
             this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
         // 指向原点的箭头
-        drawOriginalArrow(canvas);
+        if (drawArrow)
+            drawOriginalArrow(canvas);
     }
 
     private void drawOriginalArrow(Canvas canvas) {
@@ -294,6 +299,7 @@ public class EasyCoordinate extends View {
     private Map<Integer, EasyPoint> downPointList = new HashMap<>();
     private EasyPoint cPMinDown = new EasyPoint();
     private EasyPoint cPMaxDown = new EasyPoint();
+    private boolean isScaling;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -311,6 +317,7 @@ public class EasyCoordinate extends View {
                             event.getX(pointerIndex), event.getY(pointerIndex)));
                     cPMinDown.set(cPMin.x, cPMin.y);
                     cPMaxDown.set(cPMax.x, cPMax.y);
+                    isScaling = false;
                     break;
 
                 case MotionEvent.ACTION_MOVE:
@@ -320,7 +327,10 @@ public class EasyCoordinate extends View {
                         float y = event.getY(pointerIndex);
                         float deltaX = x - point.x;
                         float deltaY = y - point.y;
-                        moveBy(deltaX, deltaY);
+
+                        if (!isScaling)
+                            moveBy(deltaX, deltaY);
+
                         point.set(x, y);
                     } else { // 多指操作
                         // 得到最长的两条矢量
@@ -361,6 +371,7 @@ public class EasyCoordinate extends View {
                         float deltaDistanceY = endDistance - startDistance;
 
                         scaleBy(deltaDistanceX, deltaDistanceY);
+                        isScaling = true;
                     }
                     refresh();
                     break;
