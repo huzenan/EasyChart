@@ -40,19 +40,39 @@ public class EasyGraphLine extends EasyGraph {
         sortPointByX(rawPointList);
 
         path.reset();
-        path.moveTo(rawPointList.get(0).x, rawPointList.get(0).y);
 
         EasyPoint point;
         int size = rawPointList.size();
+        int start = -1;
         for (int i = 0; i < size; i++) {
             point = rawPointList.get(i);
-            path.lineTo(point.x, point.y);
+            if (point.x > pMin.x && point.x < pMax.x &&
+                    point.y > pMin.y && point.y < pMax.y) {
+                path.moveTo(point.x, point.y);
+                start = i == 0 ? 0 : i - 1;
+                break;
+            }
         }
-        canvas.drawPath(path, pathPaint);
 
-        for (int i = 0; i < size; i++) {
-            point = rawPointList.get(i);
-            canvas.drawCircle(point.x, point.y, 10, strokePaint);
+        if (start != -1) {
+            for (int i = start; i < size; i++) {
+                point = rawPointList.get(i);
+                path.lineTo(point.x, point.y);
+                if (i != start && (point.x < pMin.x || point.x > pMax.x ||
+                        point.y < pMin.y || point.y > pMax.y)) {
+                    break;
+                }
+            }
+            canvas.drawPath(path, pathPaint);
+
+            for (int i = start; i < size; i++) {
+                point = rawPointList.get(i);
+                canvas.drawCircle(point.x, point.y, 10, strokePaint);
+                if (i != start && (point.x < pMin.x || point.x > pMax.x ||
+                        point.y < pMin.y || point.y > pMax.y)) {
+                    break;
+                }
+            }
         }
     }
 }
