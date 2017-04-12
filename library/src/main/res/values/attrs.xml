@@ -13,10 +13,6 @@
         <attr name="ecMaxFactorX" format="float"/>
         <attr name="ecMinFactorY" format="float"/>
         <attr name="ecMaxFactorY" format="float"/>
-        <attr name="ecInitMinX" format="float"/>
-        <attr name="ecInitMaxX" format="float"/>
-        <attr name="ecInitMinY" format="float"/>
-        <attr name="ecInitMaxY" format="float"/>
         <attr name="ecBackgroundColor" format="color"/>
         <attr name="ecDrawArrow" format="boolean"/>
     </declare-styleable>
