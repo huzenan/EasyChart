@@ -3,9 +3,6 @@ package com.hzn.library;
 import android.graphics.Canvas;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 /**
  * 图形基类，所有在EasyCoordinate绘制的图形都继承此类
@@ -14,44 +11,23 @@ import java.util.List;
 public abstract class EasyGraph {
 
     /**
-     * 绘制图形
+     * 绘制图形，建议图形根据绘制范围进行绘制，超出范围的点不进行绘制
      *
-     * @param rawPointList 屏幕坐标点数据集
+     * @param rawPointList 屏幕坐标点数据集，已经过排序
      * @param pOriginal    原点（屏幕坐标）
+     * @param pMin         绘制范围左上角的点（屏幕坐标）
+     * @param pMax         绘制范围右下角的点（屏幕坐标）
      * @param canvas       Canvas
      */
     protected abstract void drawGraph(ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
                                       EasyPoint pMin, EasyPoint pMax, Canvas canvas);
 
     /**
-     * 根据x值对坐标点数据集进行升序排序
+     * 点击事件，在EasyCoordinate回调此方法后，会调用一次refresh刷新视图
      *
-     * @param pointList 坐标点数据集
+     * @param rawPointList 屏幕坐标点数据集，已经过排序
+     * @param x            点击的x坐标（屏幕坐标）
+     * @param y            点击的y坐标（屏幕坐标）
      */
-    protected void sortPointByX(List<EasyPoint> pointList) {
-        Collections.sort(pointList, new Comparator<Object>() {
-            @Override
-            public int compare(Object lhs, Object rhs) {
-                EasyPoint l = (EasyPoint) lhs;
-                EasyPoint r = (EasyPoint) rhs;
-                return l.x > r.x ? 1 : l.x == r.x ? 0 : -1;
-            }
-        });
-    }
-
-    /**
-     * 根据y值对坐标点数据集进行升序排序
-     *
-     * @param pointList 坐标点数据集
-     */
-    protected void sortPointByY(List<EasyPoint> pointList) {
-        Collections.sort(pointList, new Comparator<Object>() {
-            @Override
-            public int compare(Object lhs, Object rhs) {
-                EasyPoint l = (EasyPoint) lhs;
-                EasyPoint r = (EasyPoint) rhs;
-                return l.y > r.y ? 1 : l.y == r.y ? 0 : -1;
-            }
-        });
-    }
+    protected abstract void onClick(ArrayList<EasyPoint> rawPointList, float x, float y);
 }

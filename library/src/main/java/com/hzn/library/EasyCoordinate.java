@@ -9,9 +9,13 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,6 +79,13 @@ public class EasyCoordinate extends View {
     private float factorX;
     // y轴方向上的缩放比例
     private float factorY;
+    // 触摸开始滑动的最小距离
+    private float scaledTouchSlop;
+
+    // 坐标点排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y
+    private int sortType = SORT_TYPE_X;
+    public static final int SORT_TYPE_X = 0;
+    public static final int SORT_TYPE_Y = 1;
 
     private ArrayList<EasyPoint> coordinatePointList;
     private ArrayList<EasyPoint> rawPointList;
@@ -128,6 +139,8 @@ public class EasyCoordinate extends View {
         cBgPaint = new Paint();
         cBgPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         cBgPaint.setColor(bgColor);
+
+        scaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop() / 2.0f;
 
         coordinatePointList = new ArrayList<>();
         rawPointList = new ArrayList<>();
@@ -299,6 +312,7 @@ public class EasyCoordinate extends View {
     private Map<Integer, EasyPoint> downPointList = new HashMap<>();
     private EasyPoint cPMinDown = new EasyPoint();
     private EasyPoint cPMaxDown = new EasyPoint();
+    private boolean isMoving;
     private boolean isScaling;
 
     @Override
@@ -328,7 +342,9 @@ public class EasyCoordinate extends View {
                         float deltaX = x - point.x;
                         float deltaY = y - point.y;
 
-                        if (!isScaling)
+                        if (!isMoving && (Math.abs(deltaX) > scaledTouchSlop || Math.abs(deltaY) > scaledTouchSlop))
+                            isMoving = true;
+                        if (!isScaling && isMoving)
                             moveBy(deltaX, deltaY);
 
                         point.set(x, y);
@@ -376,8 +392,13 @@ public class EasyCoordinate extends View {
                     refresh();
                     break;
 
-                case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
+                    if (null != graph && !isMoving && !isScaling) {
+                        graph.onClick(rawPointList, event.getX(), event.getY());
+                        refresh();
+                    }
+                    isMoving = false;
+                case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_POINTER_UP:
                     pointList.remove(pointerId);
                     downPointList.remove(pointerId);
@@ -421,18 +442,27 @@ public class EasyCoordinate extends View {
     }
 
     /**
-     * 设置坐标点数据集
+     * 设置坐标点数据集，将对数据进行排序
      *
      * @param pointList 坐标点数据集
+     * @param sortType  数据的排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y，默认为SORT_TYPE_X
      * @param clear     是否清除原有数据
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, boolean clear) {
+    public void setDataList(ArrayList<EasyPoint> pointList, int sortType, boolean clear) {
         if (null == pointList || pointList.size() == 0)
             return;
 
         if (clear)
             this.coordinatePointList.clear();
         this.coordinatePointList.addAll(pointList);
+
+        // 对数据进行排序
+        if (sortType == SORT_TYPE_X)
+            sortPointByX(this.coordinatePointList);
+        else if (sortType == SORT_TYPE_Y)
+            sortPointByY(this.coordinatePointList);
+        else
+            sortPointByX(this.coordinatePointList);
 
         refresh();
     }
@@ -441,11 +471,12 @@ public class EasyCoordinate extends View {
      * 设置坐标点数据集和图形类
      *
      * @param pointList 坐标点数据集
+     * @param sortType  数据的排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y
      * @param graph     图形类
      * @param clear     是否清除原有数据
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, EasyGraph graph, boolean clear) {
-        setDataList(pointList, clear);
+    public void setDataList(ArrayList<EasyPoint> pointList, int sortType, EasyGraph graph, boolean clear) {
+        setDataList(pointList, sortType, clear);
         this.graph = graph;
     }
 
@@ -467,6 +498,38 @@ public class EasyCoordinate extends View {
         pOriginal.set(pMin.x + cWidth * originalXPercent,
                 pMax.y - cHeight * originalYPercent);
         refresh();
+    }
+
+    /**
+     * 根据x值对坐标点数据集进行升序排序
+     *
+     * @param pointList 坐标点数据集
+     */
+    private void sortPointByX(List<EasyPoint> pointList) {
+        Collections.sort(pointList, new Comparator<Object>() {
+            @Override
+            public int compare(Object lhs, Object rhs) {
+                EasyPoint l = (EasyPoint) lhs;
+                EasyPoint r = (EasyPoint) rhs;
+                return l.x > r.x ? 1 : l.x == r.x ? 0 : -1;
+            }
+        });
+    }
+
+    /**
+     * 根据y值对坐标点数据集进行升序排序
+     *
+     * @param pointList 坐标点数据集
+     */
+    private void sortPointByY(List<EasyPoint> pointList) {
+        Collections.sort(pointList, new Comparator<Object>() {
+            @Override
+            public int compare(Object lhs, Object rhs) {
+                EasyPoint l = (EasyPoint) lhs;
+                EasyPoint r = (EasyPoint) rhs;
+                return l.y > r.y ? 1 : l.y == r.y ? 0 : -1;
+            }
+        });
     }
 
     @Override
