@@ -82,11 +82,6 @@ public class EasyCoordinate extends View {
     // 触摸开始滑动的最小距离
     private float scaledTouchSlop;
 
-    // 坐标点排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y
-    private int sortType = SORT_TYPE_X;
-    public static final int SORT_TYPE_X = 0;
-    public static final int SORT_TYPE_Y = 1;
-
     private ArrayList<EasyPoint> coordinatePointList;
     private ArrayList<EasyPoint> rawPointList;
     private EasyGraph graph;
@@ -236,7 +231,7 @@ public class EasyCoordinate extends View {
             canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
         // 图形
         if (null != graph)
-            this.graph.drawGraph(rawPointList, pOriginal, pMin, pMax, canvas);
+            this.graph.drawGraph(coordinatePointList, rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
         // 指向原点的箭头
         if (drawArrow)
             drawOriginalArrow(canvas);
@@ -394,7 +389,7 @@ public class EasyCoordinate extends View {
 
                 case MotionEvent.ACTION_UP:
                     if (null != graph && !isMoving && !isScaling) {
-                        graph.onClick(rawPointList, event.getX(), event.getY());
+                        graph.onClick(coordinatePointList, rawPointList, event.getX(), event.getY());
                         refresh();
                     }
                     isMoving = false;
@@ -442,13 +437,12 @@ public class EasyCoordinate extends View {
     }
 
     /**
-     * 设置坐标点数据集，将对数据进行排序
+     * 设置坐标点数据集，将对数据在x方向上进行排序后显示
      *
      * @param pointList 坐标点数据集
-     * @param sortType  数据的排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y，默认为SORT_TYPE_X
      * @param clear     是否清除原有数据
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, int sortType, boolean clear) {
+    public void setDataList(ArrayList<EasyPoint> pointList, boolean clear) {
         if (null == pointList || pointList.size() == 0)
             return;
 
@@ -457,12 +451,7 @@ public class EasyCoordinate extends View {
         this.coordinatePointList.addAll(pointList);
 
         // 对数据进行排序
-        if (sortType == SORT_TYPE_X)
-            sortPointByX(this.coordinatePointList);
-        else if (sortType == SORT_TYPE_Y)
-            sortPointByY(this.coordinatePointList);
-        else
-            sortPointByX(this.coordinatePointList);
+        sortPointByX(this.coordinatePointList);
 
         refresh();
     }
@@ -471,12 +460,11 @@ public class EasyCoordinate extends View {
      * 设置坐标点数据集和图形类
      *
      * @param pointList 坐标点数据集
-     * @param sortType  数据的排序类型，分别为SORT_TYPE_X或SORT_TYPE_Y
      * @param graph     图形类
      * @param clear     是否清除原有数据
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, int sortType, EasyGraph graph, boolean clear) {
-        setDataList(pointList, sortType, clear);
+    public void setDataList(ArrayList<EasyPoint> pointList, EasyGraph graph, boolean clear) {
+        setDataList(pointList, clear);
         this.graph = graph;
     }
 

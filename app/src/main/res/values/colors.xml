@@ -4,7 +4,9 @@
     <color name="colorPrimaryDark">#358769</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="colorPoint">#24c3d2</color>
-    <color name="colorPath">#FF4081</color>
+    <color name="colorPoint">#8db6de</color>
+    <color name="colorPointSelected">#FF4081</color>
+    <color name="colorSelectedBg">#f9d180</color>
+    <color name="colorPath">#e78cab</color>
 
 </resources>
