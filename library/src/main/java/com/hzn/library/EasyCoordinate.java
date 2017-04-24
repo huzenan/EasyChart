@@ -231,7 +231,7 @@ public class EasyCoordinate extends View {
             canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
         // 图形
         if (null != graph)
-            this.graph.drawGraph(coordinatePointList, rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
+            this.graph.draw(coordinatePointList, rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
         // 指向原点的箭头
         if (drawArrow)
             drawOriginalArrow(canvas);

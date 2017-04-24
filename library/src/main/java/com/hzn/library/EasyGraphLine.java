@@ -91,45 +91,11 @@ public class EasyGraphLine extends EasyGraph {
     }
 
     @Override
-    protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
-                             EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas) {
+    protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
+                             int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas) {
         if (null == rawPointList || rawPointList.size() == 0)
             return;
 
-        // 计算出需要绘制的点的范围
-        EasyPoint min = new EasyPoint();
-        EasyPoint max = new EasyPoint();
-        int size = rawPointList.size();
-        int start;
-        int end;
-        int i;
-        for (i = 0; i < size; i++) {
-            EasyPoint p = rawPointList.get(i);
-            if (p.x >= pMin.x)
-                break;
-        }
-        i = i == 0 ? 0 : i - 1;
-        start = i;
-        min.x = rawPointList.get(start).x;
-        min.y = rawPointList.get(start).y; // init
-
-        for (; i < size; i++) {
-            EasyPoint p = rawPointList.get(i);
-
-            if (p.y < min.y)
-                min.y = p.y;
-            else if (p.y > max.y)
-                max.y = p.y;
-
-            if (p.x > pMax.x)
-                break;
-        }
-        end = i == size ? i - 1 : i;
-        max.x = rawPointList.get(end).x;
-
-        // 根据范围确定是否绘制
-        RectF rectCanvas = new RectF(pMin.x, pMin.y, pMax.x, pMax.y);
-        RectF rectGraph = new RectF(min.x, min.y, max.x, max.y);
         if (RectF.intersects(rectCanvas, rectGraph)) {
             // 绘制点击后的矩形背景
             if (selectedIndex != -1) {
