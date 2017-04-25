@@ -389,7 +389,7 @@ public class EasyCoordinate extends View {
 
                 case MotionEvent.ACTION_UP:
                     if (null != graph && !isMoving && !isScaling) {
-                        graph.onClick(coordinatePointList, rawPointList, event.getX(), event.getY());
+                        graph.onClick(coordinatePointList, rawPointList, event.getX(), event.getY(), pOriginal);
                         refresh();
                     }
                     isMoving = false;

@@ -136,10 +136,10 @@ public class EasyGraphLine extends EasyGraph {
     }
 
     @Override
-    protected void onClick(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, float x, float y) {
-        int size = rawPointList.size();
+    protected void onClickGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
+                                int start, int end, float x, float y, EasyPoint pOriginal) {
         int i;
-        for (i = 0; i < size; i++) {
+        for (i = start; i <= end; i++) {
             EasyPoint point = rawPointList.get(i);
             if (x > point.x - 50 && x < point.x + 50 &&
                     y > point.y - 50 && y < point.y + 50) {
@@ -147,37 +147,12 @@ public class EasyGraphLine extends EasyGraph {
                 break;
             }
         }
-        if (i == size) {
+        if (i == end + 1) {
             if (selectedIndex != -1 && null != onPointSelectedListener)
                 onPointSelectedListener.onPointUnselected(pointList.get(selectedIndex));
             selectedIndex = -1;
         } else if (null != onPointSelectedListener) {
             onPointSelectedListener.onPointSelected(pointList.get(selectedIndex));
         }
-    }
-
-    /**
-     * 监听点的选中与取消选中
-     */
-    public interface OnPointSelectedListener {
-        /**
-         * 点被选中时回调
-         *
-         * @param selectedPoint 被选中的点（原始坐标）
-         */
-        void onPointSelected(EasyPoint selectedPoint);
-
-        /**
-         * 点击其他区域取消点的选中时回调
-         *
-         * @param unselectedPoint 被取消选中的点（原始坐标）
-         */
-        void onPointUnselected(EasyPoint unselectedPoint);
-    }
-
-    private OnPointSelectedListener onPointSelectedListener;
-
-    public void setOnPointSelectedListener(OnPointSelectedListener onPointSelectedListener) {
-        this.onPointSelectedListener = onPointSelectedListener;
     }
 }

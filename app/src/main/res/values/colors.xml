@@ -8,5 +8,7 @@
     <color name="colorPointSelected">#FF4081</color>
     <color name="colorSelectedBg">#f9d180</color>
     <color name="colorPath">#e78cab</color>
+    <color name="colorText">#919191</color>
+    <color name="colorTextSelected">#5a9cde</color>
 
 </resources>
