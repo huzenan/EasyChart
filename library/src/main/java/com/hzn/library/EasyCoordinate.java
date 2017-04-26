@@ -238,7 +238,8 @@ public class EasyCoordinate extends View {
             for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
                 EasyCoordinateEntity entity = entry.getValue();
                 if (null != entity.coordinatePointList && entity.coordinatePointList.size() > 0)
-                    entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
+                    entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal,
+                            pMin, pMax, axisWidth, factorX, factorY, canvas);
             }
         }
         // 指向原点的箭头
@@ -402,7 +403,8 @@ public class EasyCoordinate extends View {
                     for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
                         EasyCoordinateEntity entity = entry.getValue();
                         if (null != entity.graph && !isMoving && !isScaling) {
-                            entity.graph.onClick(entity.coordinatePointList, entity.rawPointList, event.getX(), event.getY(), pOriginal);
+                            entity.graph.onClick(entity.coordinatePointList, entity.rawPointList,
+                                    event.getX(), event.getY(), pOriginal, factorX, factorY);
                             needRefresh = true;
                         }
                     }

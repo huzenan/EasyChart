@@ -48,6 +48,7 @@ public class EasyGraphHistogram extends EasyGraph {
     private Path path;
 
     private int selectedIndex;
+    private float halfFactorWidth;
 
     /**
      * 初始化柱状图图形
@@ -121,8 +122,12 @@ public class EasyGraphHistogram extends EasyGraph {
 
     @Override
     protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
-                             int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas) {
+                             int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
+                             float factorX, float factorY, Canvas canvas) {
         if (rectCanvas.intersect(rectGraph)) {
+
+            halfFactorWidth = width * factorX / 2;
+
             EasyPoint p;
             EasyPoint pR;
             RectF r = new RectF();
@@ -135,9 +140,9 @@ public class EasyGraphHistogram extends EasyGraph {
             for (int i = start; i <= end; i++) {
                 p = pointList.get(i);
                 pR = rawPointList.get(i);
-                r.set(pR.x - width / 2,
+                r.set(pR.x - halfFactorWidth / 2,
                         p.y > 0 ? pR.y : pOriginal.y + axisWidth / 2 + borderWidth / 2,
-                        pR.x + width / 2,
+                        pR.x + halfFactorWidth / 2,
                         p.y > 0 ? pOriginal.y - axisWidth / 2 - borderWidth / 2 : pR.y);
 
                 if (i != selectedIndex) {
@@ -184,12 +189,13 @@ public class EasyGraphHistogram extends EasyGraph {
 
     @Override
     protected void onClickGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
-                                int start, int end, float x, float y, EasyPoint pOriginal) {
+                                int start, int end, float x, float y, EasyPoint pOriginal, float factorX, float factorY) {
+        float touchRegion = 25 * Math.min(factorX, factorY);
         int i;
         for (i = start; i <= end; i++) {
             EasyPoint point = rawPointList.get(i);
-            if (x > point.x - width / 2 - 25 && x < point.x + width / 2 + 25 &&
-                    y > Math.min(point.y, pOriginal.y) - 25 && y < Math.max(point.y, pOriginal.y + 25)) {
+            if (x > point.x - halfFactorWidth / 2 - touchRegion && x < point.x + halfFactorWidth / 2 + touchRegion &&
+                    y > Math.min(point.y, pOriginal.y) - touchRegion && y < Math.max(point.y, pOriginal.y + touchRegion)) {
                 selectedIndex = i;
                 break;
             }

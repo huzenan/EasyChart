@@ -118,16 +118,16 @@ public class MainActivity extends AppCompatActivity {
     // 柱状图（带折线）
     private EasyGraphHistogram getGraphHistogram() {
         EasyGraphHistogram graph = new EasyGraphHistogram(
-                dipToPx(10),
+                dipToPx(12),
+                this.getResources().getColor(R.color.colorTextSelected),
                 this.getResources().getColor(R.color.colorPointSelected),
-                this.getResources().getColor(R.color.colorTextSelected),
                 dipToPx(1.5f),
-                this.getResources().getColor(R.color.colorPath),
                 this.getResources().getColor(R.color.colorPoint),
+                this.getResources().getColor(R.color.colorPath),
                 this.getResources().getColor(R.color.colorText),
-                this.getResources().getColor(R.color.colorTextSelected),
+                this.getResources().getColor(R.color.colorPointSelected),
                 TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics()),
-                this.getResources().getColor(R.color.colorPrimary),
+                this.getResources().getColor(R.color.colorPath),
                 dipToPx(2)
         );
         graph.setOnPointSelectedListener(new EasyGraph.OnPointSelectedListener() {

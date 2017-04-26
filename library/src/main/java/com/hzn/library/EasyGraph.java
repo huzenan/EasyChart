@@ -26,8 +26,8 @@ public abstract class EasyGraph {
      * @param axisWidth    坐标轴的宽度，单位px
      * @param canvas       Canvas
      */
-    public void draw(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
-                     EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas) {
+    public void draw(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
+                     EasyPoint pMin, EasyPoint pMax, float axisWidth, float factorX, float factorY, Canvas canvas) {
         // 计算出需要绘制的点的范围
         EasyPoint min = new EasyPoint();
         EasyPoint max = new EasyPoint();
@@ -60,7 +60,8 @@ public abstract class EasyGraph {
         // 根据范围确定是否绘制
         RectF rectCanvas = new RectF(pMin.x, pMin.y, pMax.x, pMax.y);
         RectF rectGraph = new RectF(min.x, min.y, max.x, max.y);
-        drawGraph(pointList, rawPointList, rectCanvas, rectGraph, startIndex, endIndex, pOriginal, pMin, pMax, axisWidth, canvas);
+        drawGraph(pointList, rawPointList, rectCanvas, rectGraph, startIndex, endIndex,
+                pOriginal, pMin, pMax, axisWidth, factorX, factorY, canvas);
     }
 
     /**
@@ -80,7 +81,8 @@ public abstract class EasyGraph {
      * @param canvas       Canvas
      */
     protected abstract void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
-                                      int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas);
+                                      int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
+                                      float factorX, float factorY, Canvas canvas);
 
     /**
      * 点击事件，由坐标系类EasyCoordinate调用，在EasyCoordinate回调此方法后，会调用一次refresh刷新视图
@@ -90,8 +92,9 @@ public abstract class EasyGraph {
      * @param x            点击的x坐标（屏幕坐标）
      * @param y            点击的y坐标（屏幕坐标）
      */
-    public void onClick(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, float x, float y, EasyPoint pOriginal) {
-        onClickGraph(pointList, rawPointList, startIndex, endIndex, x, y, pOriginal);
+    public void onClick(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, float x, float y,
+                        EasyPoint pOriginal, float factorX, float factorY) {
+        onClickGraph(pointList, rawPointList, startIndex, endIndex, x, y, pOriginal, factorX, factorY);
     }
 
     /**
@@ -105,7 +108,7 @@ public abstract class EasyGraph {
      * @param y            点击的y坐标（屏幕坐标）
      */
     protected abstract void onClickGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
-                                         int start, int end, float x, float y, EasyPoint pOriginal);
+                                         int start, int end, float x, float y, EasyPoint pOriginal, float factorX, float factorY);
 
     /**
      * 设置选中和取消选中的监听

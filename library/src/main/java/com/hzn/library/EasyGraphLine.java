@@ -20,39 +20,26 @@ public class EasyGraphLine extends EasyGraph {
     private int pointColor;
     // 当前选中点的颜色
     private int selectedColor;
-    // 当前选中的点在点集中的下标
-    private int selectedIndex;
 
     private Paint pointPaint;
     private Paint pathPaint;
     private Paint selectedBgPaint;
     private Path path;
 
+    private int selectedIndex;
+    private float factorPointRadius;
+
     /**
      * 使用默认值初始化图形
      */
     public EasyGraphLine() {
-        pointPaint = new Paint();
-        pointPaint.setAntiAlias(true);
-        pointPaint.setColor(Color.BLUE);
-        pointPaint.setStrokeWidth(5);
-        pointPaint.setStyle(Paint.Style.STROKE);
-        pathPaint = new Paint();
-        pathPaint.setAntiAlias(true);
-        pathPaint.setColor(Color.RED);
-        pathPaint.setStrokeWidth(4);
-        pathPaint.setStyle(Paint.Style.STROKE);
-        selectedBgPaint = new Paint();
-        selectedBgPaint.setAntiAlias(true);
-        selectedBgPaint.setColor(Color.YELLOW);
-        selectedBgPaint.setStrokeWidth(0);
-        selectedBgPaint.setStyle(Paint.Style.FILL);
-        selectedBgPaint.setAlpha(100);
-        path = new Path();
-        this.pointRadius = 10.0f;
-        this.pointColor = Color.BLUE;
-        this.selectedColor = Color.RED;
-        selectedIndex = -1;
+        this(Color.BLUE,
+                Color.RED,
+                Color.YELLOW,
+                5.0f,
+                10.0f,
+                Color.RED,
+                4.0f);
     }
 
     /**
@@ -67,6 +54,13 @@ public class EasyGraphLine extends EasyGraph {
      */
     public EasyGraphLine(int pointColor, int selectedColor, int selectedBgColor,
                          float pointStrokeWidth, float pointRadius, int pathColor, float pathWidth) {
+        this.pointRadius = pointRadius;
+        this.pointColor = pointColor;
+        this.selectedColor = selectedColor;
+        init(selectedBgColor, pointStrokeWidth, pathColor, pathWidth);
+    }
+
+    private void init(int selectedBgColor, float pointStrokeWidth, int pathColor, float pathWidth) {
         pointPaint = new Paint();
         pointPaint.setAntiAlias(true);
         pointPaint.setColor(pointColor);
@@ -84,19 +78,20 @@ public class EasyGraphLine extends EasyGraph {
         selectedBgPaint.setStyle(Paint.Style.FILL);
         selectedBgPaint.setAlpha(100);
         path = new Path();
-        this.pointRadius = pointRadius;
-        this.pointColor = pointColor;
-        this.selectedColor = selectedColor;
         selectedIndex = -1;
     }
 
     @Override
     protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
-                             int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth, Canvas canvas) {
+                             int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
+                             float factorX, float factorY, Canvas canvas) {
         if (null == rawPointList || rawPointList.size() == 0)
             return;
 
         if (RectF.intersects(rectCanvas, rectGraph)) {
+
+            factorPointRadius = pointRadius * Math.min(factorX, factorY);
+
             // 绘制点击后的矩形背景
             if (selectedIndex != -1) {
                 EasyPoint p = rawPointList.get(selectedIndex);
@@ -123,11 +118,11 @@ public class EasyGraphLine extends EasyGraph {
             for (int j = start; j <= end; j++) {
                 EasyPoint p = rawPointList.get(j);
                 if (j != selectedIndex) {
-                    canvas.drawCircle(p.x, p.y, pointRadius, pointPaint);
+                    canvas.drawCircle(p.x, p.y, factorPointRadius, pointPaint);
                 } else if (j == selectedIndex) {
                     pointPaint.setColor(selectedColor);
                     pointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-                    canvas.drawCircle(p.x, p.y, pointRadius, pointPaint);
+                    canvas.drawCircle(p.x, p.y, factorPointRadius, pointPaint);
                     pointPaint.setColor(pointColor);
                     pointPaint.setStyle(Paint.Style.STROKE);
                 }
@@ -137,12 +132,13 @@ public class EasyGraphLine extends EasyGraph {
 
     @Override
     protected void onClickGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
-                                int start, int end, float x, float y, EasyPoint pOriginal) {
+                                int start, int end, float x, float y, EasyPoint pOriginal, float factorX, float factorY) {
+        float touchRegion = 50 * Math.min(factorX, factorY);
         int i;
         for (i = start; i <= end; i++) {
             EasyPoint point = rawPointList.get(i);
-            if (x > point.x - 50 && x < point.x + 50 &&
-                    y > point.y - 50 && y < point.y + 50) {
+            if (x > point.x - touchRegion && x < point.x + touchRegion &&
+                    y > point.y - touchRegion && y < point.y + touchRegion) {
                 selectedIndex = i;
                 break;
             }
