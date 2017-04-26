@@ -12,6 +12,7 @@
         android:id="@+id/chart"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/layout_select"
         android:padding="20dp"
         custom:ecAxisColor="@color/colorPrimary"
         custom:ecAxisWidth="2dp"
@@ -27,4 +28,33 @@
         custom:ecOriginalXPercent="0.25"
         custom:ecOriginalYPercent="0.15"
         />
+
+    <LinearLayout
+        android:id="@+id/layout_select"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:paddingBottom="20dp"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        >
+
+        <CheckBox
+            android:id="@+id/cb_graph_line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawablePadding="5dp"
+            android:drawableRight="@mipmap/icon_line"
+            />
+
+        <CheckBox
+            android:id="@+id/cb_graph_histogram"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:drawablePadding="5dp"
+            android:drawableRight="@mipmap/icon_histogram"
+            />
+    </LinearLayout>
 </RelativeLayout>

@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.Toast;
 
 import com.hzn.library.EasyCoordinate;
@@ -17,15 +19,52 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     private EasyCoordinate easyCoordinate;
-    private ArrayList<EasyPoint> pointList;
+    private String graphLine = "g_line";
+    private String graphHistogram = "g_histogram";
+    private CheckBox cbGraphLine;
+    private CheckBox cbGraphHistogram;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initSelectLayout();
+        initGraph();
+    }
+
+    private void initSelectLayout() {
+        cbGraphLine = (CheckBox) findViewById(R.id.cb_graph_line);
+        cbGraphLine.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked)
+                    easyCoordinate.setData(graphLine, new EasyCoordinate.EasyCoordinateEntity(getPointList1(), getGraphLine()));
+                else
+                    easyCoordinate.removeData(graphLine);
+            }
+        });
+
+        cbGraphHistogram = (CheckBox) findViewById(R.id.cb_graph_histogram);
+        cbGraphHistogram.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked)
+                    easyCoordinate.setData(graphHistogram, new EasyCoordinate.EasyCoordinateEntity(getPointList2(), getGraphHistogram()));
+                else
+                    easyCoordinate.removeData(graphHistogram);
+            }
+        });
+    }
+
+    private void initGraph() {
         easyCoordinate = (EasyCoordinate) findViewById(R.id.chart);
-        pointList = new ArrayList<>();
+        cbGraphLine.setChecked(true);
+        cbGraphHistogram.setChecked(true);
+    }
+
+    private ArrayList<EasyPoint> getPointList1() {
+        ArrayList<EasyPoint> pointList = new ArrayList<>();
         pointList.add(new EasyPoint(140, 300));
         pointList.add(new EasyPoint(90, 200));
         pointList.add(new EasyPoint(-200, -150));
@@ -35,9 +74,21 @@ public class MainActivity extends AppCompatActivity {
         pointList.add(new EasyPoint(250, 400));
         pointList.add(new EasyPoint(450, -250));
         pointList.add(new EasyPoint(340, 160));
-//        EasyGraphLine graph = getGraphLine();
-        EasyGraphHistogram graph = getGraphHistogram();
-        easyCoordinate.setDataList(pointList, graph, true);
+        return pointList;
+    }
+
+    private ArrayList<EasyPoint> getPointList2() {
+        ArrayList<EasyPoint> pointList = new ArrayList<>();
+        pointList.add(new EasyPoint(-210, 243));
+        pointList.add(new EasyPoint(-84, -200));
+        pointList.add(new EasyPoint(-15, -50));
+        pointList.add(new EasyPoint(40, 150));
+        pointList.add(new EasyPoint(150, 100));
+        pointList.add(new EasyPoint(222, -75));
+        pointList.add(new EasyPoint(250, -15));
+        pointList.add(new EasyPoint(340, 160));
+        pointList.add(new EasyPoint(450, 250));
+        return pointList;
     }
 
     // 测试折线图

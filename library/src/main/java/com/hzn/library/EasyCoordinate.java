@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 坐标系
@@ -82,9 +83,8 @@ public class EasyCoordinate extends View {
     // 触摸开始滑动的最小距离
     private float scaledTouchSlop;
 
-    private ArrayList<EasyPoint> coordinatePointList;
-    private ArrayList<EasyPoint> rawPointList;
-    private EasyGraph graph;
+    // Key=name, Value=EasyCoordinateEntity
+    private HashMap<String, EasyCoordinateEntity> coordinateMap;
 
     public EasyCoordinate(Context context) {
         this(context, null);
@@ -137,8 +137,7 @@ public class EasyCoordinate extends View {
 
         scaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop() / 2.0f;
 
-        coordinatePointList = new ArrayList<>();
-        rawPointList = new ArrayList<>();
+        coordinateMap = new HashMap<>();
     }
 
     @Override
@@ -199,16 +198,20 @@ public class EasyCoordinate extends View {
 
     // 坐标点转屏幕坐标点
     private void coordinateToRaw() {
-        if (null == coordinatePointList || coordinatePointList.size() == 0)
-            return;
+        Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
+        for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
+            EasyCoordinateEntity entity = entry.getValue();
+            if (null == entity || entity.coordinatePointList.size() == 0)
+                continue;
 
-        rawPointList.clear();
+            entity.rawPointList.clear();
 
-        EasyPoint point;
-        int size = coordinatePointList.size();
-        for (int i = 0; i < size; i++) {
-            point = coordinatePointList.get(i);
-            rawPointList.add(new EasyPoint(pOriginal.x + point.x * factorX, pOriginal.y - point.y * factorY));
+            EasyPoint point;
+            int size = entity.coordinatePointList.size();
+            for (int i = 0; i < size; i++) {
+                point = entity.coordinatePointList.get(i);
+                entity.rawPointList.add(new EasyPoint(pOriginal.x + point.x * factorX, pOriginal.y - point.y * factorY));
+            }
         }
     }
 
@@ -230,8 +233,14 @@ public class EasyCoordinate extends View {
         if (pOriginal.x > pMin.x && pOriginal.x < pMax.x)
             canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
         // 图形
-        if (null != graph)
-            this.graph.draw(coordinatePointList, rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
+        if (coordinateMap.size() > 0) {
+            Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
+            for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
+                EasyCoordinateEntity entity = entry.getValue();
+                if (null != entity.coordinatePointList && entity.coordinatePointList.size() > 0)
+                    entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal, pMin, pMax, axisWidth, canvas);
+            }
+        }
         // 指向原点的箭头
         if (drawArrow)
             drawOriginalArrow(canvas);
@@ -388,10 +397,17 @@ public class EasyCoordinate extends View {
                     break;
 
                 case MotionEvent.ACTION_UP:
-                    if (null != graph && !isMoving && !isScaling) {
-                        graph.onClick(coordinatePointList, rawPointList, event.getX(), event.getY(), pOriginal);
-                        refresh();
+                    boolean needRefresh = false;
+                    Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
+                    for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
+                        EasyCoordinateEntity entity = entry.getValue();
+                        if (null != entity.graph && !isMoving && !isScaling) {
+                            entity.graph.onClick(entity.coordinatePointList, entity.rawPointList, event.getX(), event.getY(), pOriginal);
+                            needRefresh = true;
+                        }
                     }
+                    if (needRefresh)
+                        refresh();
                     isMoving = false;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_POINTER_UP:
@@ -437,35 +453,114 @@ public class EasyCoordinate extends View {
     }
 
     /**
-     * 设置坐标点数据集，将对数据在x方向上进行排序后显示
+     * 设置数据集合
      *
-     * @param pointList 坐标点数据集
-     * @param clear     是否清除原有数据
+     * @param coordinateMap 数据集合
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, boolean clear) {
-        if (null == pointList || pointList.size() == 0)
+    public void setDataList(HashMap<String, EasyCoordinateEntity> coordinateMap) {
+        if (null == coordinateMap || coordinateMap.size() <= 0)
             return;
 
-        if (clear)
-            this.coordinatePointList.clear();
-        this.coordinatePointList.addAll(pointList);
+        Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
+        for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
+            EasyCoordinateEntity entity = entry.getValue();
+            if (null == entity || entity.coordinatePointList.size() == 0)
+                continue;
 
-        // 对数据进行排序
-        sortPointByX(this.coordinatePointList);
+            sortPointByX(entity.coordinatePointList);
+        }
+
+        this.coordinateMap.putAll(coordinateMap);
 
         refresh();
     }
 
     /**
-     * 设置坐标点数据集和图形类
+     * 设置数据
      *
-     * @param pointList 坐标点数据集
-     * @param graph     图形类
-     * @param clear     是否清除原有数据
+     * @param name             String类型的名称，用于标记该图形
+     * @param coordinateEntity EasyCoordinateEntity，包括点数据集及图形
      */
-    public void setDataList(ArrayList<EasyPoint> pointList, EasyGraph graph, boolean clear) {
-        setDataList(pointList, clear);
-        this.graph = graph;
+    public void setData(String name, EasyCoordinateEntity coordinateEntity) {
+        if (null == coordinateEntity || null == coordinateEntity.coordinatePointList ||
+                coordinateEntity.coordinatePointList.size() <= 0)
+            return;
+
+        sortPointByX(coordinateEntity.coordinatePointList);
+        coordinateMap.put(name, coordinateEntity);
+
+        refresh();
+    }
+
+    /**
+     * 为指定图形添加点数据集，不删除旧的点数据集；当键值name没有对应的图形时，将只存储点数据集，此时graph为空，
+     * 需要手动调用setGraph方法设置图形。
+     *
+     * @param name      String类型的名称，用于标记该图形
+     * @param pointList 要添加的点数据集
+     */
+    public void addData(String name, ArrayList<EasyPoint> pointList) {
+        if (null == name || null == pointList || pointList.size() <= 0)
+            return;
+
+        sortPointByX(pointList);
+
+        EasyCoordinateEntity entity = coordinateMap.get(name);
+        if (null == entity)
+            coordinateMap.put(name, new EasyCoordinateEntity(pointList, null));
+        else
+            entity.coordinatePointList.addAll(pointList);
+
+        refresh();
+    }
+
+    /**
+     * 删除某个图形
+     *
+     * @param name String类型的名称，用于标记该图形
+     */
+    public void removeData(String name) {
+        if (null == name)
+            return;
+
+        coordinateMap.remove(name);
+
+        refresh();
+    }
+
+    /**
+     * 清除某个图形的点数据集，不删除该图形
+     *
+     * @param name String类型的名称，用于标记该图形
+     */
+    public void clearData(String name) {
+        if (null == name)
+            return;
+
+        EasyCoordinateEntity entity = coordinateMap.get(name);
+        if (null != entity) {
+            entity.coordinatePointList.clear();
+            entity.rawPointList.clear();
+        }
+
+        refresh();
+    }
+
+    /**
+     * 设置一个图形，可用于切换某个点数据集的图形
+     *
+     * @param name  String类型的名称，用于标记该图形
+     * @param graph 图形
+     */
+    public void setGraph(String name, EasyGraph graph) {
+        if (null == name)
+            return;
+
+        EasyCoordinateEntity entity = coordinateMap.get(name);
+        if (null != entity)
+            entity.graph = graph;
+
+        refresh();
     }
 
     /**
@@ -544,6 +639,40 @@ public class EasyCoordinate extends View {
             this.startY = vector.startY;
             this.endX = vector.endX;
             this.endY = vector.endY;
+        }
+    }
+
+    /**
+     * 坐标系坐标实体类
+     */
+    public static class EasyCoordinateEntity {
+        // 原始坐标数据集，由用户设置
+        private ArrayList<EasyPoint> coordinatePointList;
+        // 屏幕坐标数据集，由EasyCoordinate进行计算
+        private ArrayList<EasyPoint> rawPointList;
+        // 图形
+        private EasyGraph graph;
+
+        public EasyCoordinateEntity(ArrayList<EasyPoint> coordinatePointList, EasyGraph graph) {
+            this.coordinatePointList = coordinatePointList;
+            this.rawPointList = new ArrayList<>();
+            this.graph = graph;
+        }
+
+        public ArrayList<EasyPoint> getCoordinatePointList() {
+            return coordinatePointList == null ? new ArrayList<EasyPoint>() : coordinatePointList;
+        }
+
+        public void setCoordinatePointList(ArrayList<EasyPoint> coordinatePointList) {
+            this.coordinatePointList = coordinatePointList;
+        }
+
+        public EasyGraph getGraph() {
+            return graph;
+        }
+
+        public void setGraph(EasyGraph graph) {
+            this.graph = graph;
         }
     }
 }
