@@ -18,16 +18,19 @@ public abstract class EasyGraph {
     /**
      * 由坐标系类EasyCoordinate调用绘制，将计算出画布范围以及绘制图形的范围，提供给图形绘制时使用
      *
-     * @param pointList    原始坐标点数据集，已经过排序
-     * @param rawPointList 屏幕坐标点数据集，已经过排序
-     * @param pOriginal    原点（屏幕坐标）
-     * @param pMin         绘制范围左上角的点（屏幕坐标）
-     * @param pMax         绘制范围右下角的点（屏幕坐标）
-     * @param axisWidth    坐标轴的宽度，单位px
-     * @param canvas       Canvas
+     * @param pointList     原始坐标点数据集，已经过排序
+     * @param rawPointList  屏幕坐标点数据集，已经过排序
+     * @param pOriginal     原点（屏幕坐标）
+     * @param pMin          绘制范围左上角的点（屏幕坐标）
+     * @param pMax          绘制范围右下角的点（屏幕坐标）
+     * @param axisWidth     坐标轴的宽度，单位px
+     * @param factorX       x轴方向上的缩放比例
+     * @param factorY       y轴方向上的缩放比例
+     * @param animatorValue 当前动画的执行进度，范围0~1
+     * @param canvas        Canvas
      */
     public void draw(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, EasyPoint pOriginal,
-                     EasyPoint pMin, EasyPoint pMax, float axisWidth, float factorX, float factorY, Canvas canvas) {
+                     EasyPoint pMin, EasyPoint pMax, float axisWidth, float factorX, float factorY, float animatorValue, Canvas canvas) {
         // 计算出需要绘制的点的范围
         EasyPoint min = new EasyPoint();
         EasyPoint max = new EasyPoint();
@@ -61,28 +64,31 @@ public abstract class EasyGraph {
         RectF rectCanvas = new RectF(pMin.x, pMin.y, pMax.x, pMax.y);
         RectF rectGraph = new RectF(min.x, min.y, max.x, max.y);
         drawGraph(pointList, rawPointList, rectCanvas, rectGraph, startIndex, endIndex,
-                pOriginal, pMin, pMax, axisWidth, factorX, factorY, canvas);
+                pOriginal, pMin, pMax, axisWidth, factorX, factorY, animatorValue, canvas);
     }
 
     /**
      * 绘制图形，建议在绘制图形时，根据绘制范围rectCanvas和rectGraph，例如使用RectF.intersects(rectCanvas, rectGraph)进行判断；
      * 以及起始start、结束点end进行绘制，超出范围的点不进行绘制
      *
-     * @param pointList    原始坐标点数据集，已经过排序
-     * @param rawPointList 屏幕坐标点数据集，已经过排序
-     * @param rectCanvas   绘制范围的最小矩形
-     * @param rectGraph    绘制图形范围的最小矩形，以点为边界
-     * @param start        绘制图形范围的最小矩形范围内的起始点下标
-     * @param end          绘制图形范围的最小矩形范围内的结束点下标
-     * @param pOriginal    原点（屏幕坐标）
-     * @param pMin         绘制范围左上角的点（屏幕坐标）
-     * @param pMax         绘制范围右下角的点（屏幕坐标）
-     * @param axisWidth    坐标轴的宽度，单位px
-     * @param canvas       Canvas
+     * @param pointList     原始坐标点数据集，已经过排序
+     * @param rawPointList  屏幕坐标点数据集，已经过排序
+     * @param rectCanvas    绘制范围的最小矩形
+     * @param rectGraph     绘制图形范围的最小矩形，以点为边界
+     * @param start         绘制图形范围的最小矩形范围内的起始点下标
+     * @param end           绘制图形范围的最小矩形范围内的结束点下标
+     * @param pOriginal     原点（屏幕坐标）
+     * @param pMin          绘制范围左上角的点（屏幕坐标）
+     * @param pMax          绘制范围右下角的点（屏幕坐标）
+     * @param axisWidth     坐标轴的宽度，单位px
+     * @param factorX       x轴方向上的缩放比例
+     * @param factorY       y轴方向上的缩放比例
+     * @param animatorValue 当前动画的执行进度，范围0~1
+     * @param canvas        Canvas
      */
     protected abstract void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
                                       int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
-                                      float factorX, float factorY, Canvas canvas);
+                                      float factorX, float factorY, float animatorValue, Canvas canvas);
 
     /**
      * 点击事件，由坐标系类EasyCoordinate调用，在EasyCoordinate回调此方法后，会调用一次refresh刷新视图
@@ -106,6 +112,9 @@ public abstract class EasyGraph {
      * @param end          绘制图形范围的最小矩形范围内的结束点下标
      * @param x            点击的x坐标（屏幕坐标）
      * @param y            点击的y坐标（屏幕坐标）
+     * @param pOriginal    原点（屏幕坐标）
+     * @param factorX      x轴方向上的缩放比例
+     * @param factorY      y轴方向上的缩放比例
      */
     protected abstract void onClickGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList,
                                          int start, int end, float x, float y, EasyPoint pOriginal, float factorX, float factorY);

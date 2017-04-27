@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.graphics.RectF;
 import android.text.TextPaint;
 import android.util.TypedValue;
@@ -46,6 +47,8 @@ public class EasyGraphHistogram extends EasyGraph {
     private TextPaint textPaint;
     private Paint.FontMetrics fm;
     private Path path;
+    private Path pathDst;
+    private PathMeasure pm;
 
     private int selectedIndex;
     private float halfFactorWidth;
@@ -117,13 +120,15 @@ public class EasyGraphHistogram extends EasyGraph {
         textPaint.setTextSize(textSize);
         fm = textPaint.getFontMetrics();
         path = new Path();
+        pathDst = new Path();
+        pm = new PathMeasure();
         selectedIndex = -1;
     }
 
     @Override
     protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
                              int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
-                             float factorX, float factorY, Canvas canvas) {
+                             float factorX, float factorY, float animatorValue, Canvas canvas) {
         if (rectCanvas.intersect(rectGraph)) {
 
             halfFactorWidth = width * factorX / 2;
@@ -141,9 +146,9 @@ public class EasyGraphHistogram extends EasyGraph {
                 p = pointList.get(i);
                 pR = rawPointList.get(i);
                 r.set(pR.x - halfFactorWidth / 2,
-                        p.y > 0 ? pR.y : pOriginal.y + axisWidth / 2 + borderWidth / 2,
+                        p.y > 0 ? pOriginal.y + (pR.y - pOriginal.y) * animatorValue : pOriginal.y + axisWidth / 2 + borderWidth / 2,
                         pR.x + halfFactorWidth / 2,
-                        p.y > 0 ? pOriginal.y - axisWidth / 2 - borderWidth / 2 : pR.y);
+                        p.y > 0 ? pOriginal.y - axisWidth / 2 - borderWidth / 2 : pOriginal.y + (pR.y - pOriginal.y) * animatorValue);
 
                 if (i != selectedIndex) {
                     canvas.drawRect(r, rectPaint);
@@ -161,7 +166,11 @@ public class EasyGraphHistogram extends EasyGraph {
             }
 
             // 绘制线条
-            canvas.drawPath(path, linePaint);
+            pathDst.reset();
+            pathDst.rLineTo(0, 0);
+            pm.setPath(path, false);
+            pm.getSegment(0.0f, pm.getLength() * animatorValue, pathDst, true);
+            canvas.drawPath(pathDst, linePaint);
 
             // 绘制文字
             for (int i = start; i <= end; i++) {

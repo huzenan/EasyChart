@@ -1,5 +1,6 @@
 package com.hzn.library;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -85,6 +86,11 @@ public class EasyCoordinate extends View {
 
     // Key=name, Value=EasyCoordinateEntity
     private HashMap<String, EasyCoordinateEntity> coordinateMap;
+    // Key=name, Value=EasyAnimationEntity
+    private HashMap<String, EasyAnimationEntity> animationMap;
+
+    // 动画执行默认时长，单位毫秒
+    private static final long DEFAULT_ANIM_DURATION = 500;
 
     public EasyCoordinate(Context context) {
         this(context, null);
@@ -138,6 +144,7 @@ public class EasyCoordinate extends View {
         scaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop() / 2.0f;
 
         coordinateMap = new HashMap<>();
+        animationMap = new HashMap<>();
     }
 
     @Override
@@ -237,9 +244,15 @@ public class EasyCoordinate extends View {
             Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
             for (Map.Entry<String, EasyCoordinateEntity> entry : entries) {
                 EasyCoordinateEntity entity = entry.getValue();
-                if (null != entity.coordinatePointList && entity.coordinatePointList.size() > 0)
-                    entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal,
-                            pMin, pMax, axisWidth, factorX, factorY, canvas);
+                if (null != entity.coordinatePointList && entity.coordinatePointList.size() > 0) {
+                    EasyAnimationEntity animationEntity = animationMap.get(entry.getKey());
+                    if (null != animationEntity && animationEntity.isAnimationEnabled)
+                        entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal,
+                                pMin, pMax, axisWidth, factorX, factorY, animationEntity.animatorValue, canvas);
+                    else
+                        entity.graph.draw(entity.coordinatePointList, entity.rawPointList, pOriginal,
+                                pMin, pMax, axisWidth, factorX, factorY, 1.0f, canvas);
+                }
             }
         }
         // 指向原点的箭头
@@ -496,7 +509,7 @@ public class EasyCoordinate extends View {
 
     /**
      * 为指定图形添加点数据集，不删除旧的点数据集；当键值name没有对应的图形时，将只存储点数据集，此时graph为空，
-     * 需要手动调用setGraph方法设置图形。
+     * 需要手动调用{@link EasyCoordinate#setGraph(String, EasyGraph)}方法设置图形。
      *
      * @param name      String类型的名称，用于标记该图形
      * @param pointList 要添加的点数据集
@@ -517,7 +530,8 @@ public class EasyCoordinate extends View {
     }
 
     /**
-     * 删除某个图形
+     * 删除某个图形，将删除该图形的动画对象，若只希望清除数据点，
+     * 可以使用{@link EasyCoordinate#clearData(String)}方法进行清除
      *
      * @param name String类型的名称，用于标记该图形
      */
@@ -526,6 +540,7 @@ public class EasyCoordinate extends View {
             return;
 
         coordinateMap.remove(name);
+        animationMap.remove(name);
 
         refresh();
     }
@@ -583,6 +598,84 @@ public class EasyCoordinate extends View {
         pOriginal.set(pMin.x + cWidth * originalXPercent,
                 pMax.y - cHeight * originalYPercent);
         refresh();
+    }
+
+    /**
+     * 初始化动画效果
+     *
+     * @param name         String类型的名称，用于标记需要初始化动画的图形
+     * @param enabled      是否开启动画效果
+     * @param animDuration 动画执行时长
+     */
+    public void initAnimation(String name, boolean enabled, long animDuration) {
+        if (null == name)
+            return;
+
+        final EasyAnimationEntity animationEntity = new EasyAnimationEntity();
+        animationEntity.isAnimationEnabled = enabled;
+        animationEntity.animDuration = animDuration;
+        animationEntity.animUpdateListener = new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                animationEntity.animatorValue = (float) animation.getAnimatedValue();
+                invalidate();
+            }
+        };
+        animationMap.put(name, animationEntity);
+    }
+
+    /**
+     * 初始化动画效果，使用默认动画执行时长
+     *
+     * @param name    String类型的名称，用于标记需要初始化动画的图形
+     * @param enabled 是否开启动画效果
+     */
+    public void initAnimation(String name, boolean enabled) {
+        initAnimation(name, enabled, DEFAULT_ANIM_DURATION);
+    }
+
+    /**
+     * 初始化动画效果，默认关闭动画效果，可通过{@link EasyCoordinate#setAnimationEnabled(String, boolean)}方法开启动画效果
+     *
+     * @param name String类型的名称，用于标记需要初始化动画的图形
+     */
+    public void initAnimation(String name) {
+        initAnimation(name, false, DEFAULT_ANIM_DURATION);
+    }
+
+    /**
+     * 设置是否开启动画效果
+     *
+     * @param name    String类型的名称，用于标记需要播放动画的图形
+     * @param enabled 是否开启动画效果
+     */
+    public void setAnimationEnabled(String name, boolean enabled) {
+        if (null == name)
+            return;
+
+        EasyAnimationEntity animationEntity = animationMap.get(name);
+        if (null == animationEntity || !animationEntity.isAnimationEnabled)
+            return;
+
+        animationEntity.isAnimationEnabled = enabled;
+    }
+
+    /**
+     * 开始播放动画
+     *
+     * @param name String类型的名称，用于标记需要播放动画的图形
+     */
+    public void startAnimation(String name) {
+        if (null == name)
+            return;
+
+        EasyAnimationEntity animationEntity = animationMap.get(name);
+        if (null == animationEntity || !animationEntity.isAnimationEnabled)
+            return;
+
+        ValueAnimator animator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        animator.addUpdateListener(animationEntity.animUpdateListener);
+        animator.setDuration(animationEntity.animDuration).start();
     }
 
     /**
@@ -644,6 +737,17 @@ public class EasyCoordinate extends View {
         }
     }
 
+    private static class EasyAnimationEntity {
+        // 是否开启动画效果
+        public boolean isAnimationEnabled;
+        // 动画执行时长
+        public long animDuration;
+        // 动画更新监听
+        public ValueAnimator.AnimatorUpdateListener animUpdateListener;
+        // 动画执行进度
+        public float animatorValue;
+    }
+
     /**
      * 坐标系坐标实体类
      */
@@ -655,6 +759,12 @@ public class EasyCoordinate extends View {
         // 图形
         private EasyGraph graph;
 
+        /**
+         * 初始化一个坐标实体对象
+         *
+         * @param coordinatePointList 坐标点数据集
+         * @param graph               图形
+         */
         public EasyCoordinateEntity(ArrayList<EasyPoint> coordinatePointList, EasyGraph graph) {
             this.coordinatePointList = coordinatePointList;
             this.rawPointList = new ArrayList<>();

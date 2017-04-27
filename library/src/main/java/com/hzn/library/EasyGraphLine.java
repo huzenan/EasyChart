@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
@@ -25,9 +26,12 @@ public class EasyGraphLine extends EasyGraph {
     private Paint pathPaint;
     private Paint selectedBgPaint;
     private Path path;
+    private Path pathDst;
+    private PathMeasure pm;
 
     private int selectedIndex;
     private float factorPointRadius;
+    private RectF rectOval;
 
     /**
      * 使用默认值初始化图形
@@ -78,13 +82,16 @@ public class EasyGraphLine extends EasyGraph {
         selectedBgPaint.setStyle(Paint.Style.FILL);
         selectedBgPaint.setAlpha(100);
         path = new Path();
+        pathDst = new Path();
+        pm = new PathMeasure();
+        rectOval = new RectF();
         selectedIndex = -1;
     }
 
     @Override
     protected void drawGraph(ArrayList<EasyPoint> pointList, ArrayList<EasyPoint> rawPointList, RectF rectCanvas, RectF rectGraph,
                              int start, int end, EasyPoint pOriginal, EasyPoint pMin, EasyPoint pMax, float axisWidth,
-                             float factorX, float factorY, Canvas canvas) {
+                             float factorX, float factorY, float animatorValue, Canvas canvas) {
         if (null == rawPointList || rawPointList.size() == 0)
             return;
 
@@ -112,17 +119,23 @@ public class EasyGraphLine extends EasyGraph {
                 EasyPoint p = rawPointList.get(j);
                 path.lineTo(p.x, p.y);
             }
-            canvas.drawPath(path, pathPaint);
+            pathDst.reset();
+            pathDst.rLineTo(0, 0);
+            pm.setPath(path, false);
+            pm.getSegment(0.0f, pm.getLength() * animatorValue, pathDst, true);
+            canvas.drawPath(pathDst, pathPaint);
 
             // 绘制点
             for (int j = start; j <= end; j++) {
                 EasyPoint p = rawPointList.get(j);
+                rectOval.set(p.x - factorPointRadius, p.y - factorPointRadius,
+                        p.x + factorPointRadius, p.y + factorPointRadius);
                 if (j != selectedIndex) {
-                    canvas.drawCircle(p.x, p.y, factorPointRadius, pointPaint);
+                    canvas.drawArc(rectOval, 0, 360 * animatorValue, false, pointPaint);
                 } else if (j == selectedIndex) {
                     pointPaint.setColor(selectedColor);
                     pointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-                    canvas.drawCircle(p.x, p.y, factorPointRadius, pointPaint);
+                    canvas.drawArc(rectOval, 0, 360 * animatorValue, false, pointPaint);
                     pointPaint.setColor(pointColor);
                     pointPaint.setStyle(Paint.Style.STROKE);
                 }

@@ -38,10 +38,13 @@ public class MainActivity extends AppCompatActivity {
         cbGraphLine.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked)
+                if (isChecked) {
                     easyCoordinate.setData(graphLine, new EasyCoordinate.EasyCoordinateEntity(getPointList1(), getGraphLine()));
-                else
+                    easyCoordinate.initAnimation(graphLine, false);
+                    easyCoordinate.startAnimation(graphLine);
+                } else {
                     easyCoordinate.removeData(graphLine);
+                }
             }
         });
 
@@ -49,10 +52,13 @@ public class MainActivity extends AppCompatActivity {
         cbGraphHistogram.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked)
+                if (isChecked) {
                     easyCoordinate.setData(graphHistogram, new EasyCoordinate.EasyCoordinateEntity(getPointList2(), getGraphHistogram()));
-                else
+                    easyCoordinate.initAnimation(graphHistogram, true, 2500);
+                    easyCoordinate.startAnimation(graphHistogram);
+                } else {
                     easyCoordinate.removeData(graphHistogram);
+                }
             }
         });
     }
@@ -60,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
     private void initGraph() {
         easyCoordinate = (EasyCoordinate) findViewById(R.id.chart);
         cbGraphLine.setChecked(true);
-        cbGraphHistogram.setChecked(true);
     }
 
     private ArrayList<EasyPoint> getPointList1() {
