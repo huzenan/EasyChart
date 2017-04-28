@@ -173,24 +173,29 @@ public class EasyGraphHistogram extends EasyGraph {
             canvas.drawPath(pathDst, linePaint);
 
             // 绘制文字
-            for (int i = start; i <= end; i++) {
-                p = pointList.get(i);
-                pR = rawPointList.get(i);
+            if (animatorValue >= 0.8f) {
+                int alpha = 0;
+                for (int i = start; i <= end; i++) {
+                    p = pointList.get(i);
+                    pR = rawPointList.get(i);
 
-                text = String.valueOf(p.y);
-                float textHeight = fm.bottom - fm.top;
-                float textWidth = textPaint.measureText(text);
-                float mid = p.y > 0 ?
-                        pR.y - textHeight / 2 :
-                        pR.y + textHeight / 2;
-                float baseLine = mid - (fm.ascent + fm.descent) / 2;
+                    text = String.valueOf(p.y);
+                    float textHeight = fm.bottom - fm.top;
+                    float textWidth = textPaint.measureText(text);
+                    float mid = p.y > 0 ?
+                            pR.y - textHeight / 2 :
+                            pR.y + textHeight / 2;
+                    float baseLine = mid - (fm.ascent + fm.descent) / 2;
 
-                if (i != selectedIndex) {
-                    canvas.drawText(text, pR.x - textWidth / 2, baseLine, textPaint);
-                } else {
-                    textPaint.setColor(textSelectedColor);
-                    canvas.drawText(text, pR.x - textWidth / 2, baseLine, textPaint);
-                    textPaint.setColor(textColor);
+                    if (i != selectedIndex) {
+                        textPaint.setAlpha((int) (1275 * animatorValue - 1020)); // animatorValue:0.8->1  alpha:0->255
+                        canvas.drawText(text, pR.x - textWidth / 2, baseLine, textPaint);
+                    } else {
+                        textPaint.setColor(textSelectedColor);
+                        textPaint.setAlpha((int) (1275 * animatorValue - 1020)); // animatorValue:0.8->1  alpha:0->255
+                        canvas.drawText(text, pR.x - textWidth / 2, baseLine, textPaint);
+                        textPaint.setColor(textColor);
+                    }
                 }
             }
         }

@@ -17,7 +17,9 @@
         custom:ecAxisColor="@color/colorPrimary"
         custom:ecAxisWidth="2dp"
         custom:ecDrawArrow="true"
+        custom:ecFirstQuartileMode="false"
         custom:ecGridColor="#f9d180"
+        custom:ecGridShow="true"
         custom:ecGridUnitX="50"
         custom:ecGridUnitY="50"
         custom:ecGridWidth="1dp"
@@ -25,6 +27,8 @@
         custom:ecMaxFactorY="3.0"
         custom:ecMinFactorX="0.5"
         custom:ecMinFactorY="0.5"
+        custom:ecMoveMode="XY"
+        custom:ecScaleMode="XY"
         custom:ecOriginalXPercent="0.25"
         custom:ecOriginalYPercent="0.15"
         />

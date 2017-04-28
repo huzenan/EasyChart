@@ -9,11 +9,25 @@
         <attr name="ecGridWidth" format="dimension"/>
         <attr name="ecGridUnitX" format="integer"/>
         <attr name="ecGridUnitY" format="integer"/>
+        <attr name="ecGridShow" format="boolean"/>
         <attr name="ecMinFactorX" format="float"/>
         <attr name="ecMaxFactorX" format="float"/>
         <attr name="ecMinFactorY" format="float"/>
         <attr name="ecMaxFactorY" format="float"/>
         <attr name="ecBackgroundColor" format="color"/>
         <attr name="ecDrawArrow" format="boolean"/>
+        <attr name="ecFirstQuartileMode" format="boolean"/>
+        <attr name="ecMoveMode" format="enum">
+            <enum name="X" value="0"/>
+            <enum name="Y" value="1"/>
+            <enum name="XY" value="2"/>
+            <enum name="none" value="3"/>
+        </attr>
+        <attr name="ecScaleMode" format="enum">
+            <enum name="X" value="0"/>
+            <enum name="Y" value="1"/>
+            <enum name="XY" value="2"/>
+            <enum name="none" value="3"/>
+        </attr>
     </declare-styleable>
 </resources>

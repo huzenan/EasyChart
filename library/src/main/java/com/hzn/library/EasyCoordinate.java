@@ -42,6 +42,8 @@ public class EasyCoordinate extends View {
     private int gridUnitX;
     // y方向上，网格绘制的单位标准，默认100个坐标单位
     private int gridUnitY;
+    // 是否显示网格，默认true
+    private boolean gridShow;
     // x轴方向上的缩放比例的最小值，默认0.5f
     private float minFactorX;
     // x轴方向上的缩放比例的最大值，默认2.0f
@@ -54,6 +56,29 @@ public class EasyCoordinate extends View {
     private int bgColor;
     // 是否在坐标轴移出显示区域时，显示箭头，默认绘制
     private boolean drawArrow;
+    // 是否为第一象限模式，为true时将只显示第一象限，默认false
+    private boolean firstQuartileMode;
+    // 移动模式，分别为X，Y，XY和none，默认为XY
+    private int moveMode;
+    // 缩放模式，分别为X，Y，XY和none，默认为XY
+    private int scaleMode;
+
+    /**
+     * x方向模式
+     */
+    public static final int MODE_X = 0;
+    /**
+     * y方向模式
+     */
+    public static final int MODE_Y = 1;
+    /**
+     * xy方向模式
+     */
+    public static final int MODE_XY = 2;
+    /**
+     * 锁定模式
+     */
+    public static final int MODE_NONE = 3;
 
     private Paint cPaint;
     private Paint cGridPaint;
@@ -113,12 +138,16 @@ public class EasyCoordinate extends View {
                 TypedValue.COMPLEX_UNIT_DIP, 1.0f, getResources().getDisplayMetrics()));
         gridUnitX = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitX, 100);
         gridUnitY = a.getInteger(R.styleable.EasyCoordinate_ecGridUnitY, 100);
+        gridShow = a.getBoolean(R.styleable.EasyCoordinate_ecGridShow, true);
         minFactorX = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorX, 0.5f);
         maxFactorX = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorX, 2.0f);
         minFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMinFactorY, 0.5f);
         maxFactorY = a.getFloat(R.styleable.EasyCoordinate_ecMaxFactorY, 2.0f);
         bgColor = a.getInt(R.styleable.EasyCoordinate_ecBackgroundColor, 0);
         drawArrow = a.getBoolean(R.styleable.EasyCoordinate_ecDrawArrow, true);
+        firstQuartileMode = a.getBoolean(R.styleable.EasyCoordinate_ecFirstQuartileMode, false);
+        moveMode = a.getInteger(R.styleable.EasyCoordinate_ecMoveMode, MODE_XY);
+        scaleMode = a.getInteger(R.styleable.EasyCoordinate_ecScaleMode, MODE_XY);
         a.recycle();
 
         pMin = new EasyPoint();
@@ -231,14 +260,24 @@ public class EasyCoordinate extends View {
         if (bgColor != 0)
             canvas.drawRect(pMin.x, pMin.y, pMax.x, pMax.y, cBgPaint);
         // 网格
-        if (gridColor != 0)
+        if (gridColor != 0 && gridShow)
             drawGrid(canvas);
         // x轴
-        if (pOriginal.y > pMin.y && pOriginal.y < pMax.y)
-            canvas.drawLine(pMin.x, pOriginal.y, pMax.x, pOriginal.y, cPaint);
+        if (pOriginal.y > pMin.y && pOriginal.y < pMax.y) {
+            float min = !firstQuartileMode ? pMin.x :
+                    pOriginal.x < pMin.x ? pMin.x :
+                            pOriginal.x > pMax.x ? pMax.x : pOriginal.x;
+            float max = pMax.x;
+            canvas.drawLine(min, pOriginal.y, max, pOriginal.y, cPaint);
+        }
         // y轴
-        if (pOriginal.x > pMin.x && pOriginal.x < pMax.x)
-            canvas.drawLine(pOriginal.x, pMin.y, pOriginal.x, pMax.y, cPaint);
+        if (pOriginal.x > pMin.x && pOriginal.x < pMax.x) {
+            float min = pMin.y;
+            float max = !firstQuartileMode ? pMax.y :
+                    pOriginal.y < pMin.y ? pMin.y :
+                            pOriginal.y > pMax.y ? pMax.y : pOriginal.y;
+            canvas.drawLine(pOriginal.x, min, pOriginal.x, max, cPaint);
+        }
         // 图形
         if (coordinateMap.size() > 0) {
             Set<Map.Entry<String, EasyCoordinateEntity>> entries = coordinateMap.entrySet();
@@ -309,20 +348,28 @@ public class EasyCoordinate extends View {
     // 绘制网格
     private void drawGrid(Canvas canvas) {
         // 纵向
-        int start = (int) (cPMin.x / gridUnitX) - 1;
+        int start = !firstQuartileMode ? (int) (cPMin.x / gridUnitX) - 1 : 0;
         int end = (int) (cPMax.x / gridUnitX) + 1;
+        float min = pMin.y;
+        float max = !firstQuartileMode ? pMax.y :
+                pOriginal.y < pMin.y ? pMin.y :
+                        pOriginal.y > pMax.y ? pMax.y : pOriginal.y;
         float raw;
         for (int x = start; x <= end; x++) {
             raw = pOriginal.x + gridUnitX * factorX * x;
-            canvas.drawLine(raw, pMin.y, raw, pMax.y, cGridPaint);
+            canvas.drawLine(raw, min, raw, max, cGridPaint);
         }
 
         // 横向
-        start = (int) (cPMin.y / gridUnitY) - 1;
+        start = firstQuartileMode ? 0 : (int) (cPMin.y / gridUnitY) - 1;
         end = (int) (cPMax.y / gridUnitY) + 1;
+        min = !firstQuartileMode ? pMin.x :
+                pOriginal.x < pMin.x ? pMin.x :
+                        pOriginal.x > pMax.x ? pMax.x : pOriginal.x;
+        max = pMax.x;
         for (int y = start; y <= end; y++) {
             raw = pOriginal.y - gridUnitY * factorY * y;
-            canvas.drawLine(pMin.x, raw, pMax.x, raw, cGridPaint);
+            canvas.drawLine(min, raw, max, raw, cGridPaint);
         }
     }
 
@@ -353,6 +400,9 @@ public class EasyCoordinate extends View {
                     break;
 
                 case MotionEvent.ACTION_MOVE:
+                    if (moveMode == MODE_NONE && scaleMode == MODE_NONE)
+                        break;
+
                     if (event.getPointerCount() == 1) { // 单指操作
                         EasyPoint point = pointList.get(pointerId);
                         float x = event.getX(pointerIndex);
@@ -444,9 +494,11 @@ public class EasyCoordinate extends View {
      * @param deltaY y方向的偏移量
      */
     public void moveBy(float deltaX, float deltaY) {
-        float fDeltaX = deltaX / factorX;
-        float fDeltaY = deltaY / factorY;
-        resetCoordinate(pOriginal.x + deltaX, pOriginal.y + deltaY,
+        float oDeltaX = moveMode == MODE_Y || moveMode == MODE_NONE ? 0.0f : deltaX;
+        float oDeltaY = moveMode == MODE_X || moveMode == MODE_NONE ? 0.0f : deltaY;
+        float fDeltaX = moveMode == MODE_Y || moveMode == MODE_NONE ? 0.0f : deltaX / factorX;
+        float fDeltaY = moveMode == MODE_X || moveMode == MODE_NONE ? 0.0f : deltaY / factorY;
+        resetCoordinate(pOriginal.x + oDeltaX, pOriginal.y + oDeltaY,
                 cPMin.x - fDeltaX, cPMin.y + fDeltaY,
                 cPMax.x - fDeltaX, cPMax.y + fDeltaY);
     }
@@ -458,10 +510,14 @@ public class EasyCoordinate extends View {
      * @param deltaDistanceY y方向的缩放距离
      */
     public void scaleBy(float deltaDistanceX, float deltaDistanceY) {
-        float deltaMinX = (-cPMin.x / (cPMax.x - cPMin.x)) * deltaDistanceX;
-        float deltaMaxX = deltaDistanceX - deltaMinX;
-        float deltaMinY = (-cPMin.y / (cPMax.y - cPMin.y)) * deltaDistanceY;
-        float deltaMaxY = deltaDistanceY - deltaMinY;
+        float deltaMinX = scaleMode == MODE_Y || scaleMode == MODE_NONE ?
+                0.0f : (-cPMin.x / (cPMax.x - cPMin.x)) * deltaDistanceX;
+        float deltaMaxX = scaleMode == MODE_Y || scaleMode == MODE_NONE ?
+                0.0f : deltaDistanceX - deltaMinX;
+        float deltaMinY = scaleMode == MODE_X || scaleMode == MODE_NONE ?
+                0.0f : (-cPMin.y / (cPMax.y - cPMin.y)) * deltaDistanceY;
+        float deltaMaxY = scaleMode == MODE_X || scaleMode == MODE_NONE ?
+                0.0f : deltaDistanceY - deltaMinY;
         resetCoordinate(pOriginal.x, pOriginal.y,
                 cPMinDown.x + deltaMinX, cPMinDown.y + deltaMinY,
                 cPMaxDown.x - deltaMaxX, cPMaxDown.y - deltaMaxY);

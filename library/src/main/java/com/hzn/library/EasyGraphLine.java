@@ -100,7 +100,8 @@ public class EasyGraphLine extends EasyGraph {
             factorPointRadius = pointRadius * Math.min(factorX, factorY);
 
             // 绘制点击后的矩形背景
-            if (selectedIndex != -1) {
+            if (selectedIndex != -1 && animatorValue > 0.8f) {
+                selectedBgPaint.setAlpha((int) (500 * animatorValue - 400)); // animatorValue:0.8->1  alpha:0->100
                 EasyPoint p = rawPointList.get(selectedIndex);
                 RectF bgRect = new RectF(
                         Math.min(pOriginal.x, p.x),
@@ -126,18 +127,21 @@ public class EasyGraphLine extends EasyGraph {
             canvas.drawPath(pathDst, pathPaint);
 
             // 绘制点
-            for (int j = start; j <= end; j++) {
-                EasyPoint p = rawPointList.get(j);
-                rectOval.set(p.x - factorPointRadius, p.y - factorPointRadius,
-                        p.x + factorPointRadius, p.y + factorPointRadius);
-                if (j != selectedIndex) {
-                    canvas.drawArc(rectOval, 0, 360 * animatorValue, false, pointPaint);
-                } else if (j == selectedIndex) {
-                    pointPaint.setColor(selectedColor);
-                    pointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-                    canvas.drawArc(rectOval, 0, 360 * animatorValue, false, pointPaint);
-                    pointPaint.setColor(pointColor);
-                    pointPaint.setStyle(Paint.Style.STROKE);
+            if (animatorValue >= 0.8f) {
+                float sweepAngle = 1800 * animatorValue - 1440; // animatorValue:0.8->1  sweepAngle:0->360
+                for (int j = start; j <= end; j++) {
+                    EasyPoint p = rawPointList.get(j);
+                    rectOval.set(p.x - factorPointRadius, p.y - factorPointRadius,
+                            p.x + factorPointRadius, p.y + factorPointRadius);
+                    if (j != selectedIndex) {
+                        canvas.drawArc(rectOval, 0, sweepAngle, false, pointPaint);
+                    } else if (j == selectedIndex) {
+                        pointPaint.setColor(selectedColor);
+                        pointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+                        canvas.drawArc(rectOval, 0, sweepAngle, false, pointPaint);
+                        pointPaint.setColor(pointColor);
+                        pointPaint.setStyle(Paint.Style.STROKE);
+                    }
                 }
             }
         }
