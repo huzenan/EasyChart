@@ -9,6 +9,21 @@ A light chart view for Android, including Line Chart and Histogram, have fun and
 ### First Quartile Mode & Animation
 ![firstquartile](https://github.com/huzenan/EasyChart/blob/master/screenshots/first%20quartile%20anim.gif)
 
+## Maven
+```xml
+    <dependency>
+      <groupId>com.hzn.easychart</groupId>
+      <artifactId>library</artifactId>
+      <version>1.0.0</version>
+      <type>pom</type>
+    </dependency>
+```
+
+## Gradle
+```xml
+    compile 'com.hzn.easychart:library:1.0.0'
+```
+
 ## Usage
 >layout
 
